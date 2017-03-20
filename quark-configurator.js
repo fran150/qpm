@@ -59,8 +59,6 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {
                                             var shims = property.value.properties;
 
-                                            console.log(quarkData.config.shims);
-
                                             if (quarkData.config.shims && quarkData.config.shims != null) {
                                                 for (var newShim in quarkData.config.shims) {
                                                     var found = false;

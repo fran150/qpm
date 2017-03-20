@@ -7,7 +7,7 @@ const chalk = require('chalk');
 var config = {
     packages: {
         host: "localhost",
-        port: 2403
+        port: 58930
     },
     http: {
     }
@@ -23,7 +23,7 @@ module.exports = {
             host: config.packages.host,
             port: config.packages.port,
             method: "GET",
-            path: "/packages?name=" + name
+            path: "/package/" + name
         }
 
         // Merge with default options
@@ -49,6 +49,8 @@ module.exports = {
 
                 if (Array.isArray(data) && data.length > 0) {
                     config = data[0];
+                } else {
+                    config = data;
                 }
 
                 callback(config);
