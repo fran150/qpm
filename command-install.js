@@ -19,53 +19,58 @@ function installCommand(package, spaces, debug, callback) {
         target = 'src/app/require.config.js';
     }
 
-    fs.readFile(target, 'utf8', function(err, fileContent) {
-        if (err) {
-            console.log(chalk.red("Error Reading File:"));
-            console.log(chalk.red("%j"), err);
-        }
+    if (!target) {
+        console.log(chalk.red("Can't find any of the required files. Check if your current directory is a quark project."));
+    }
 
-        console.log(chalk.green(spaces + "Installing package %s..."), package);
+    if (target) {
+        fs.readFile(target, 'utf8', function(err, fileContent) {
+            if (err) {
+                console.log(chalk.red("Error Reading File:"));
+                console.log(chalk.red("%j"), err);
+            }
 
-        bower.install(package, true, "", debug, function(bowerPackages) {
-            var waiting = 0;
+            console.log(chalk.green(spaces + "Installing package %s..."), package);
 
-            for (var name in bowerPackages) {
-                var bowerConfig = bowerPackages[name];
+            bower.install(package, true, "", debug, function(bowerPackages) {
+                var waiting = 0;
 
-                console.log(chalk.green("Bower Installed: [", chalk.white(name), "]"));
+                for (var name in bowerPackages) {
+                    var bowerConfig = bowerPackages[name];
 
-                waiting++;
-                // Get the package config from REST service
-                rest.getPackage(name, spaces, debug, function(quarkConfig) {
-                    if (quarkConfig) {
-                        if (debug) {
-                            console.log(chalk.yellow("Received package info:"));
-                            console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
-                        }
+                    console.log(chalk.green("Bower Installed: [", chalk.white(name), "]"));
 
-                        if (quarkConfig.config && quarkConfig.config != null) {
-                            fileContent = quarkConfigurator.addPackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug);
-                        }
-                    }
-
-                    waiting--;
-
-                    if (waiting == 0) {
-                        fs.writeFile(target, fileContent, 'utf8', function(err) {
-                            if (err) {
-                                console.log(chalk.red("Error Writing File:"));
-                                console.log(chalk.red("%j"), err);
+                    waiting++;
+                    // Get the package config from REST service
+                    rest.getPackage(name, spaces, debug, function(quarkConfig) {
+                        if (quarkConfig) {
+                            if (debug) {
+                                console.log(chalk.yellow("Received package info:"));
+                                console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
                             }
 
-                            callback();
-                        });
-                    }
-                });
-            }
-        });
-    });
+                            if (quarkConfig.config && quarkConfig.config != null) {
+                                fileContent = quarkConfigurator.addPackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug);
+                            }
+                        }
 
+                        waiting--;
+
+                        if (waiting == 0) {
+                            fs.writeFile(target, fileContent, 'utf8', function(err) {
+                                if (err) {
+                                    console.log(chalk.red("Error Writing File:"));
+                                    console.log(chalk.red("%j"), err);
+                                }
+
+                                callback();
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    }
 }
 
 module.exports = installCommand;

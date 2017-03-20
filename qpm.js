@@ -1,4 +1,6 @@
+#!/usr/bin/env node
 var chalk = require('chalk');
+var help = require('./help');
 
 // Get required libs
 var installCommand = require('./command-install');
@@ -19,7 +21,7 @@ var command = argv["_"][0];
 
 // If no command specified or -h parameter received show help
 if (!command || argv["h"]) {
-    showHelp();
+    help.show();
     return;
 }
 
@@ -34,7 +36,7 @@ switch (command) {
         break;
 
     default:
-        showHelp();
+        help.show();
         break;
 }
 

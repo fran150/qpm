@@ -4,7 +4,9 @@
   "description": "Quark Package Manager",
   "main": "qpm.js",
   "scripts": {
-    "test": "node index.js"
+  },
+  "bin": {
+      "qpm": "./qpm.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +28,7 @@
     "chalk": "^1.1.3",
     "escodegen": "^1.8.1",
     "esprima": "^3.1.3",
+    "inquirer": "^3.0.6",
     "merge": "^1.2.0",
     "minimist": "^1.2.0"
   }
