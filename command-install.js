@@ -2,7 +2,7 @@ var fs = require('fs');
 var chalk = require('chalk');
 
 var rest = require('./rest');
-var bower = require('./bower');
+var bower = require('./bower-node');
 var quarkConfigurator = require('./quark-configurator');
 
 // Install command
