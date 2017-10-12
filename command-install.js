@@ -9,7 +9,7 @@ var quarkConfigurator = require('./quark-configurator');
 function installCommand(package, spaces, debug, callback) {
     spaces = spaces || "";
 
-    var target = "";
+    let target = "";
 
     if (fs.existsSync('tests/app/require.config.js')) {
         target = 'tests/app/require.config.js';
@@ -33,10 +33,10 @@ function installCommand(package, spaces, debug, callback) {
             console.log(chalk.green(spaces + "Installing package %s..."), package);
 
             bower.install(package, true, "", debug, function(bowerPackages) {
-                var waiting = 0;
+                let waiting = 0;
 
-                for (var name in bowerPackages) {
-                    var bowerConfig = bowerPackages[name];
+                for (let name in bowerPackages) {
+                    let bowerConfig = bowerPackages[name];
 
                     console.log(chalk.green("Bower Installed: [", chalk.white(name), "]"));
 

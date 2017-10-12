@@ -7,28 +7,28 @@ module.exports = {
     addPackage: function(quarkData, bowerConfig, fileContent, spaces, debug) {
         if (!spaces) spaces = "";
 
-        var parsed = esprima.parse(fileContent);
+        let parsed = esprima.parse(fileContent);
 
         parsed.body.forEach(function(statement) {
             if (statement.type == "ExpressionStatement") {
                 if (statement.expression.type == "AssignmentExpression") {
-                    var assignment = statement.expression;
+                    let assignment = statement.expression;
 
                     if (assignment.operator == "=" && assignment.left.type == "Identifier" && assignment.left.name == "require") {
                         if (assignment.right.type == "CallExpression" && assignment.right.callee.type == "Identifier" && assignment.right.callee.name == "requireConfigure") {
-                            var arguments = assignment.right.arguments;
+                            let arguments = assignment.right.arguments;
 
                             if (arguments.length == 2) {
                                 if (arguments[1].type == "ObjectExpression") {
-                                    var properties = arguments[1].properties;
+                                    let properties = arguments[1].properties;
 
                                     properties.forEach(function(property) {
                                         if (property.key.type == "Identifier" && property.key.name == "paths") {
-                                            var paths = property.value.properties;
+                                            let paths = property.value.properties;
 
                                             if (quarkData.config.paths && quarkData.config.paths != null) {
-                                                for (var newPath in quarkData.config.paths) {
-                                                    var found = false;
+                                                for (let newPath in quarkData.config.paths) {
+                                                    let found = false;
 
                                                     paths.forEach(function(path) {
                                                         if (path.key.value == newPath) {
@@ -37,16 +37,14 @@ module.exports = {
                                                     });
 
                                                     if (!found) {
-                                                        var path = quarkData.config.paths[newPath];
+                                                        let path = quarkData.config.paths[newPath];
 
-                                                        if (path) {
-                                                            path = fsPath.relative(process.cwd(), bowerConfig.canonicalDir + "/" + path);
-                                                            path = path.replace(/\\/g, "/");
-                                                        }
+                                                        path = fsPath.relative(process.cwd(), bowerConfig.canonicalDir + "/../" + path);
+                                                        path = path.replace(/\\/g, "/");
 
-                                                        var code = "var temp = { '" + newPath + "': '" + path + "' }";
-                                                        var temp = esprima.parse(code);
-                                                        var newProp = temp.body[0].declarations[0].init.properties[0];
+                                                        let code = "var temp = { '" + newPath + "': '" + path + "' }";
+                                                        let temp = esprima.parse(code);
+                                                        let newProp = temp.body[0].declarations[0].init.properties[0];
 
                                                         paths.push(newProp);
 
@@ -57,11 +55,11 @@ module.exports = {
                                         }
 
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {
-                                            var shims = property.value.properties;
+                                            let shims = property.value.properties;
 
                                             if (quarkData.config.shims && quarkData.config.shims != null) {
-                                                for (var newShim in quarkData.config.shims) {
-                                                    var found = false;
+                                                for (let newShim in quarkData.config.shims) {
+                                                    let found = false;
 
                                                     shims.forEach(function(shim) {
                                                         if (shim.key.value == newShim) {
@@ -70,10 +68,10 @@ module.exports = {
                                                     });
 
                                                     if (!found) {
-                                                        var shim = quarkData.config.shims[newShim];
+                                                        let shim = quarkData.config.shims[newShim];
 
-                                                        var code = "var temp = { '" + newShim + "': { deps: [";
-                                                        var first = true;
+                                                        let code = "var temp = { '" + newShim + "': { deps: [";
+                                                        let first = true;
 
                                                         shim.forEach(function(value) {
                                                             if (!first) {
@@ -87,8 +85,8 @@ module.exports = {
 
                                                         code += "] } }";
 
-                                                        var temp = esprima.parse(code);
-                                                        var newProp = temp.body[0].declarations[0].init.properties[0];
+                                                        let temp = esprima.parse(code);
+                                                        let newProp = temp.body[0].declarations[0].init.properties[0];
                                                         shims.push(newProp);
 
                                                         console.log(spaces + chalk.blue("Added new shim: %s"), newShim);
@@ -105,7 +103,7 @@ module.exports = {
             }
         });
 
-        var generated = escodegen.generate(parsed);
+        let generated = escodegen.generate(parsed);
         return generated;
     }
 }
