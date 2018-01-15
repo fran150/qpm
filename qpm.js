@@ -20,8 +20,13 @@ if (debug) {
 var command = argv["_"][0];
 
 // If no command specified or -h parameter received show help
-if (!command || argv["h"]) {
+if (!command) {
     help.show();
+    return;
+}
+
+if (command && argv["h"]) {
+    help.show(command);
     return;
 }
 
@@ -36,7 +41,7 @@ switch (command) {
         break;
 
     default:
-        help.show();
+        help.show(command);
         break;
 }
 
