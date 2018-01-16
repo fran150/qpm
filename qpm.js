@@ -19,13 +19,14 @@ if (debug) {
 // Get command "qpm [command]"
 var command = argv["_"][0];
 
-// If no command specified or -h parameter received show help
+// If no command specified show help
 if (!command) {
     help.show();
     return;
 }
 
-if (command && argv["h"]) {
+// If command specified and -h parameter received show help
+if (command && (argv["h"] || argv["help"])) {
     help.show(command);
     return;
 }
@@ -37,7 +38,7 @@ switch (command) {
         var package = argv["_"][1];
 
         // Call install
-        installCommand(package, "", debug, end);
+        installCommand(package, argv, "", debug, end);
         break;
 
     default:

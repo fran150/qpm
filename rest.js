@@ -8,32 +8,34 @@ module.exports = {
     getPackage: function(name, spaces, debug, callback) {
         spaces = spaces || "";
 
-        qpmrc.read(function(config) {
-            // Set request config
-            var httpConfig = {
-                host: config.packages.host,
-                port: config.packages.port,
-                method: "GET",
-                path: config.packages.path + name
-            }
+        var config = qpmrc.read();
 
-            // Merge with default options
-            httpConfig = merge(httpConfig, config.http);
+        // Set request config
+        var httpConfig = {
+            host: config.packages.host,
+            port: config.packages.port,
+            method: "GET",
+            path: config.packages.path + name.split('.').join('')
+        }
 
-            // Service response
-            var response = "";
+        // Merge with default options
+        httpConfig = merge(httpConfig, config.http);
 
-            // Make an HTTP Request to the package service
-            var req = http.request(httpConfig, (res) => {
-                res.setEncoding('utf8');
+        // Service response
+        var response = "";
 
-                // On data received append to response
-                res.on('data', (chunk) => {
-                    response += chunk;
-                });
+        // Make an HTTP Request to the package service
+        var req = http.request(httpConfig, (res) => {
+            res.setEncoding('utf8');
 
-                // On request end invoke callback
-                res.on('end', () => {
+            // On data received append to response
+            res.on('data', (chunk) => {
+                response += chunk;
+            });
+
+            // On request end invoke callback
+            res.on('end', () => {
+                try {
                     var data = JSON.parse(response);
 
                     var config;
@@ -45,16 +47,19 @@ module.exports = {
                     }
 
                     callback(config);
-                });
+                } catch(ex) {
+                    console.log(chalk.red("Error parsing quark config for package " + name));
+                    throw ex;
+                }
             });
-
-            // On request error show
-            req.on('error', (e) => {
-                console.log(chalk.red(`Error retrieving package info: ${ e.message }`));
-            });
-
-            // End the HTTP Request
-            req.end();
         });
+
+        // On request error show
+        req.on('error', (e) => {
+            console.log(chalk.red(`Error retrieving package info: ${ e.message }`));
+        });
+
+        // End the HTTP Request
+        req.end();
     }
 }

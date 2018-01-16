@@ -14,28 +14,21 @@ function getDefaultConfig() {
 }
 
 module.exports = {
-    read: function(callback) {
+    read: function() {
         var rcFile = {};
 
         var target = "./.qpmrc";
 
         if (fs.existsSync(target)) {
-            fs.readFile(target, 'utf8', function(err, fileContent) {
-                if (err) {
-                    console.log(chalk.red("Error Reading File:"));
-                    console.log(chalk.red("%j"), err);
-                }
+            var fileContent = fs.readFileSync(target, 'utf8');
 
-                rcFile = JSON.parse(fileContent);
+            rcFile = JSON.parse(fileContent);
 
-                console.log(rcFile);
+            var config = merge.recursive(getDefaultConfig(), rcFile);
 
-                var config = merge.recursive(getDefaultConfig(), rcFile);
-
-                callback(config);
-            });
+            return config;
         } else {
-            callback(getDefaultConfig());
+            return getDefaultConfig();
         }
     }
 }
