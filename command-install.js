@@ -68,6 +68,10 @@ function installCommand(package, argv, spaces, debug, callback) {
         if (config && config.base) {
             baseDir = config.base;
         }
+
+        if (fs.existsSync("./src")) {
+            baseDir = "./src";
+        }
     }
 
     // If config file is found
@@ -97,8 +101,6 @@ function installCommand(package, argv, spaces, debug, callback) {
 
                 // For each installed bower package
                 for (let name in bowerPackages) {
-                    let bowerConfig = bowerPackages[name];
-
                     console.log(chalk.white(spaces + "Bower Installed: [", chalk.green(name), "]"));
                 }
 

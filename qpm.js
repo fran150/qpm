@@ -4,6 +4,7 @@ var help = require('./help');
 
 // Get required libs
 var installCommand = require('./command-install');
+var uninstallCommand = require('./command-uninstall');
 
 // Process command arguments
 var argv = require('minimist')(process.argv.slice(2));
@@ -41,6 +42,14 @@ switch (command) {
         installCommand(package, argv, "", debug, end);
         break;
 
+    case "uninstall":
+        // Get package name
+        var package = argv["_"][1];
+
+        // Call install
+        uninstallCommand(package, argv, "", debug, end);
+        break;
+        
     default:
         help.show(command);
         break;

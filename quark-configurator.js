@@ -8,7 +8,7 @@ module.exports = {
         let parsed = esprima.parse(fileContent);
 
         if (debug) {
-            console.log(chalk.yellow(spaces + "Checking config file for requireConfigue..."));
+            console.log(chalk.yellow(spaces + "Checking config file for requireConfigure..."));
         }
         
         for (var bodyIndex in parsed.body) {
@@ -171,5 +171,73 @@ module.exports = {
 
         let generated = escodegen.generate(parsed);
         return generated;
+    },
+
+    removePackage: function (quarkData, bowerConfig, fileContent, spaces, debug) {
+        if (!spaces) spaces = "";
+
+        let parsed = esprima.parse(fileContent);
+
+        parsed.body.forEach(function (statement) {
+            if (statement.type == "ExpressionStatement") {
+                if (statement.expression.type == "AssignmentExpression") {
+                    let assignment = statement.expression;
+
+                    if (assignment.operator == "=" && assignment.left.type == "Identifier" && assignment.left.name == "require") {
+                        if (assignment.right.type == "CallExpression" && assignment.right.callee.type == "Identifier" && assignment.right.callee.name == "requireConfigure") {
+                            let arguments = assignment.right.arguments;
+
+                            if (arguments.length == 2) {
+                                if (arguments[1].type == "ObjectExpression") {
+                                    let properties = arguments[1].properties;
+
+                                    properties.forEach(function (property) {
+                                        if (property.key.type == "Identifier" && property.key.name == "paths") {
+                                            let paths = property.value.properties;
+
+                                            if (quarkData.config.paths && quarkData.config.paths != null) {
+                                                for (let newPath in quarkData.config.paths) {
+                                                    paths.forEach(function (path) {
+                                                        if (path.key.value == newPath) {
+                                                            var index = paths.indexOf(path);
+                                                            if (index > -1) {                                                                
+                                                                paths.splice(index, 1);
+                                                                console.log(spaces + chalk.blue("Removed path: %s"), newPath);
+                                                            }                                                            
+                                                        }
+                                                    });                                                        
+                                                }
+                                            }
+                                        }
+
+                                        if (property.key.type == "Identifier" && property.key.name == "shim") {
+                                            let shims = property.value.properties;
+
+                                            if (quarkData.config.shims && quarkData.config.shims != null) {
+                                                for (let newShim in quarkData.config.shims) {
+                                                    shims.forEach(function (shim) {
+                                                        if (shim.key.value == newShim) {
+                                                            var index = shims.indexOf(shim);
+                                                            if (index > -1) {
+                                                                shims.splice(index, 1);
+                                                                console.log(spaces + chalk.blue("Removed shim: %s"), newShim);
+                                                            }                                                            
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        let generated = escodegen.generate(parsed);
+        return generated;
     }
+    
 }
