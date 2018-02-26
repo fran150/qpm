@@ -66,55 +66,75 @@ function uninstallCommand(package, argv, spaces, debug, callback) {
                 return;
             }
 
-            // Call bower uninstall
-            if (package) {
-                console.log(chalk.green(spaces + "Uninstalling package %s..."), package);
-            }
+            var installed = {};
 
-            bower.uninstall(package, true, "", debug, function (bowerPackages) {
-                let waiting = 0;
+            bower.list(spaces, debug, function (result) {
+                installed = processBowerData(result, installed);
 
-                // For each uninstalled bower package
-                for (let name in bowerPackages) {
-                    let bowerConfig = bowerPackages[name];
+                // Call bower uninstall
+                if (package) {
+                    console.log(chalk.green(spaces + "Uninstalling package %s..."), package);
+                }
 
-                    console.log(chalk.white(spaces + "Bower Uninstalled: [", chalk.magenta(name), "]"));
+                bower.uninstall(package, true, "", debug, function (bowerPackages) {
+                    let waiting = 0;
 
-                    waiting++;
-                    // Get the package config from REST service
-                    rest.getPackage(name, spaces, debug, function (quarkConfig) {
-                        if (quarkConfig) {
-                            if (debug) {
-                                console.log(chalk.yellow("Uninstall package info:"));
-                                console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
-                            }
+                    // For each uninstalled bower package
+                    for (let name in bowerPackages) {
+                        let bowerConfig = installed[name];
+                        let version = bowerConfig.version;
 
-                            console.log(chalk.white(spaces + "Removing Quark configuration for: [", chalk.magenta(name), "]"));
+                        console.log(chalk.white(spaces + "Bower Uninstalled: [", chalk.magenta(name), "]"));
 
-                            if (quarkConfig.config && quarkConfig.config != null) {
-                                fileContent = quarkConfigurator.removePackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug);
-                            }
-                        }
-
-                        waiting--;
-
-                        if (waiting == 0) {
-                            fs.writeFile(target, fileContent, 'utf8', function (err) {
-                                if (err) {
-                                    console.log(chalk.red("Error Writing File:"));
-                                    console.log(chalk.red("%j"), err);
+                        waiting++;
+                        // Get the package config from REST service
+                        rest.getPackage(name, version, spaces, debug, function (quarkConfig) {
+                            if (quarkConfig) {
+                                if (debug) {
+                                    console.log(chalk.yellow("Uninstall package info:"));
+                                    console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
                                 }
 
-                                callback();
-                            });
-                        }
-                    });
-                }
+                                console.log(chalk.white(spaces + "Removing Quark configuration for: [", chalk.magenta(name), "]"));
+
+                                fileContent = quarkConfigurator.removePackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug);
+                            }
+
+                            waiting--;
+
+                            if (waiting == 0) {
+                                fs.writeFile(target, fileContent, 'utf8', function (err) {
+                                    if (err) {
+                                        console.log(chalk.red("Error Writing File:"));
+                                        console.log(chalk.red("%j"), err);
+                                    }
+
+                                    callback();
+                                });
+                            }
+                        });
+                    }
+                });
             });
         });
     } else {
         console.log(chalk.red("Can't find any of the required files. QPM searches on common config file locations, if your proyect has a custom config file location use the -c or --config option."));
     }
+
+    function processBowerData(data, result) {    
+        result[data.pkgMeta.name] = {
+            dir: data.canonicalDir,
+            version: data.pkgMeta.version
+        };
+    
+        if (data.dependencies) {
+            for (var index in data.dependencies) {
+                result = processBowerData(data.dependencies[index], result);
+            }            
+        }
+    
+        return result;
+    }        
 }
 
 module.exports = uninstallCommand;

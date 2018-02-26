@@ -85,8 +85,8 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "paths") {
                                             let paths = property.value.properties;
 
-                                            if (quarkData.config.paths && quarkData.config.paths != null) {
-                                                for (let newPath in quarkData.config.paths) {
+                                            if (quarkData.paths && quarkData.paths != null) {
+                                                for (let newPath in quarkData.paths) {
                                                     let found = false;
 
                                                     paths.forEach(function(path) {
@@ -96,7 +96,7 @@ module.exports = {
                                                     });
 
                                                     if (!found) {
-                                                        let path = quarkData.config.paths[newPath];
+                                                        let path = quarkData.paths[newPath];
                                                         var base; 
                                                         
                                                         if (baseDir) {
@@ -123,8 +123,8 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {
                                             let shims = property.value.properties;
 
-                                            if (quarkData.config.shims && quarkData.config.shims != null) {
-                                                for (let newShim in quarkData.config.shims) {
+                                            if (quarkData.shims && quarkData.shims != null) {
+                                                for (let newShim in quarkData.shims) {
                                                     let found = false;
 
                                                     shims.forEach(function(shim) {
@@ -134,7 +134,7 @@ module.exports = {
                                                     });
 
                                                     if (!found) {
-                                                        let shim = quarkData.config.shims[newShim];
+                                                        let shim = quarkData.shims[newShim];
 
                                                         let code = "var temp = { '" + newShim + "': { deps: [";
                                                         let first = true;
@@ -195,8 +195,8 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "paths") {
                                             let paths = property.value.properties;
 
-                                            if (quarkData.config.paths && quarkData.config.paths != null) {
-                                                for (let newPath in quarkData.config.paths) {
+                                            if (quarkData.paths && quarkData.paths != null) {
+                                                for (let newPath in quarkData.paths) {
                                                     paths.forEach(function (path) {
                                                         if (path.key.value == newPath) {
                                                             var index = paths.indexOf(path);
@@ -213,8 +213,8 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {
                                             let shims = property.value.properties;
 
-                                            if (quarkData.config.shims && quarkData.config.shims != null) {
-                                                for (let newShim in quarkData.config.shims) {
+                                            if (quarkData.shims && quarkData.shims != null) {
+                                                for (let newShim in quarkData.shims) {
                                                     shims.forEach(function (shim) {
                                                         if (shim.key.value == newShim) {
                                                             var index = shims.indexOf(shim);

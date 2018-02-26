@@ -112,21 +112,20 @@ function installCommand(package, argv, spaces, debug, callback) {
                     // For each installed bower package
                     for (let name in mods) {
                         let bowerConfig = mods[name];
+                        let version = bowerConfig.version;
 
                         waiting++;
                         // Get the package config from REST service
-                        rest.getPackage(name, spaces, debug, function (quarkConfig) {
+                        rest.getPackage(name, version, spaces, debug, function (quarkConfig) {
                             if (quarkConfig) {
                                 if (debug) {
                                     console.log(chalk.yellow("Received package info:"));
                                     console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
                                 }
 
-                                console.log(chalk.white(spaces + "Configuring Quark for: [", chalk.green(name), "]"));                                
+                                console.log(chalk.white(spaces + "Configuring Quark for: [", chalk.green(name), "]"));
 
-                                if (quarkConfig.config && quarkConfig.config != null) {
-                                    fileContent = quarkConfigurator.addPackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug, baseDir);
-                                }
+                                fileContent = quarkConfigurator.addPackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug, baseDir);
                             }
 
                             waiting--;

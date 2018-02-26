@@ -3,13 +3,7 @@ var merge = require('merge');
 
 function getDefaultConfig() {
     return {
-        packages: {
-            host: "srvdepadesa2008",
-            port: 15080,
-            path: "/Quark/v1.0/Package/"
-        },
-        http: {
-        }
+        server: "http://localhost:3000"
     }
 }
 
