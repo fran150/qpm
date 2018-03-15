@@ -6,6 +6,8 @@ var rest = require('./rest');
 var bower = require('./bower-node');
 var quarkConfigurator = require('./quark-configurator');
 
+var utils = require('./utils');
+
 // Install command
 function installCommand(package, argv, spaces, debug, callback) {
     spaces = spaces || "";
@@ -74,6 +76,23 @@ function installCommand(package, argv, spaces, debug, callback) {
         }
     }
 
+    let gulpJson = "";
+
+    // Check for gulp file parameter
+    if (argv["g"]) {
+        gulpJson = argv["g"];
+    }
+
+    // Check for bundles parameters
+    if (!gulpJson && argv["gulpfile"]) {
+        gulpJson = argv["gulpfile"];
+    }
+
+    // If no bundling json specified set the default location
+    if (!gulpJson) {
+        gulpJson = "./gulp.conf.json";
+    }
+
     // If config file is found
     if (target) {
         // Reads the config file
@@ -95,7 +114,7 @@ function installCommand(package, argv, spaces, debug, callback) {
             if (package) {
                 console.log(chalk.green(spaces + "Installing package %s..."), package);
             }
-                        
+         
             bower.install(package, true, "", debug, function(bowerPackages) {
                 let waiting = 0;
 
@@ -104,66 +123,89 @@ function installCommand(package, argv, spaces, debug, callback) {
                     console.log(chalk.white(spaces + "Bower Installed: [", chalk.green(name), "]"));
                 }
 
-                bower.list(spaces, debug, function (result) {
-                    var mods = {};
+                // Load gulp configuration
+                loadGulpConf(gulpJson, function(gulpFound, gulpData) {
+                    // Call bower list to get the installed files
+                    bower.list(spaces, debug, function (result) {
+                        var mods = {};
 
-                    mods = processBowerData(result, mods);
+                        // Get the installed package data
+                        mods = utils.processBowerData(result, mods);
+                            
+                        // For each installed bower package
+                        for (let name in mods) {
+                            let bowerConfig = mods[name];
+                            let version = bowerConfig.version;
 
-                    // For each installed bower package
-                    for (let name in mods) {
-                        let bowerConfig = mods[name];
-                        let version = bowerConfig.version;
-
-                        waiting++;
-                        // Get the package config from REST service
-                        rest.getPackage(name, version, spaces, debug, function (quarkConfig) {
-                            if (quarkConfig) {
-                                if (debug) {
-                                    console.log(chalk.yellow("Received package info:"));
-                                    console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
-                                }
-
-                                console.log(chalk.white(spaces + "Configuring Quark for: [", chalk.green(name), "]"));
-
-                                fileContent = quarkConfigurator.addPackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug, baseDir);
+                            // TODO: Rewrite async
+                            if (gulpFound) {
+                                
                             }
 
-                            waiting--;
-
-                            if (waiting == 0) {
-                                fs.writeFile(target, fileContent, 'utf8', function (err) {
-                                    if (err) {
-                                        console.log(chalk.red("Error Writing File:"));
-                                        console.log(chalk.red("%j"), err);
+                            waiting++;
+                            // Get the package config from REST service
+                            rest.getPackage(name, version, spaces, debug, function (quarkConfig) {
+                                if (quarkConfig) {
+                                    if (debug) {
+                                        console.log(chalk.yellow("Received package info:"));
+                                        console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
                                     }
 
-                                    callback();
-                                });
-                            }
-                        });
-                    }
-                    
+                                    console.log(chalk.white(spaces + "Configuring Quark for: [", chalk.green(name), "]"));
+
+                                    // Add package to quarks config
+                                    fileContent = quarkConfigurator.addPackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug, baseDir);
+                                }
+
+                                waiting--;
+
+                                // When all the files are ready write the output to the config
+                                if (waiting == 0) {
+                                    fs.writeFile(target, fileContent, 'utf8', function (err) {
+                                        if (err) {
+                                            console.log(chalk.red("Error Writing File:"));
+                                            console.log(chalk.red("%j"), err);
+                                        }
+
+                                        callback();
+                                    });
+                                }
+                            });
+                        }                        
+                    });
                 });
             });
+
         });
     } else {
         console.log(chalk.red("Can't find any of the required files. QPM searches on common config file locations, if your proyect has a custom config file location use the -c or --config option."));        
     }
 }
 
-function processBowerData(data, result) {    
-    result[data.pkgMeta.name] = {
-        dir: data.canonicalDir,
-        version: data.pkgMeta.version
-    };
+function loadGulpConf(gulpJsonFile, callback) {
+    fs.exists(gulpJsonFile, function(err, exists) {
+        if (exists) {
+            fs.readFile(gulpJsonFile, function(err, data) {
+                var gulpJson = JSON.parse(data);
+                callback(true, gulpJson);
+            });
+        } else {
+            callback(false, {});
+        }
+    });
+}
 
-    if (data.dependencies) {
-        for (var index in data.dependencies) {
-            result = processBowerData(data.dependencies[index], result);
-        }            
-    }
-
-    return result;
+function loadBundlingConf(bundleJsonFile, callback) {
+    fs.exists(bundleJsonFile, function(err, exists) {
+        if (exists) {
+            fs.readFile(bundleJsonFile, function(err, data) {
+                var bundleJson = JSON.parse(data);
+                callback(true, bundleJson);
+            });
+        } else {
+            callback(false, {});
+        }
+    });
 }
 
 module.exports = installCommand;

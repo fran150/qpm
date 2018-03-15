@@ -6,6 +6,8 @@ var rest = require('./rest');
 var bower = require('./bower-node');
 var quarkConfigurator = require('./quark-configurator');
 
+var utils = require('./utils');
+
 // Uninstall command
 function uninstallCommand(package, argv, spaces, debug, callback) {
     spaces = spaces || "";
@@ -69,7 +71,7 @@ function uninstallCommand(package, argv, spaces, debug, callback) {
             var installed = {};
 
             bower.list(spaces, debug, function (result) {
-                installed = processBowerData(result, installed);
+                installed = utils.processBowerData(result, installed);
 
                 // Call bower uninstall
                 if (package) {
@@ -119,21 +121,6 @@ function uninstallCommand(package, argv, spaces, debug, callback) {
         });
     } else {
         console.log(chalk.red("Can't find any of the required files. QPM searches on common config file locations, if your proyect has a custom config file location use the -c or --config option."));
-    }
-
-    function processBowerData(data, result) {    
-        result[data.pkgMeta.name] = {
-            dir: data.canonicalDir,
-            version: data.pkgMeta.version
-        };
-    
-        if (data.dependencies) {
-            for (var index in data.dependencies) {
-                result = processBowerData(data.dependencies[index], result);
-            }            
-        }
-    
-        return result;
     }        
 }
 
