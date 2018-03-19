@@ -6,13 +6,14 @@ function Utils() {
     // Process the result of bower command to a simpler object
     this.processBowerData = function(data, result) {
         result[data.pkgMeta.name] = {
+            name: data.pkgMeta.name,
             dir: data.canonicalDir,
             version: data.pkgMeta.version
         };
     
         if (data.dependencies) {
             for (var index in data.dependencies) {
-                result = processBowerData(data.dependencies[index], result);
+                result = self.processBowerData(data.dependencies[index], result);
             }            
         }
     
