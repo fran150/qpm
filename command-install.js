@@ -1,7 +1,7 @@
 var fs = require('fs');
 var chalk = require('chalk');
 var Q = require('q');
-var merge = require('deepmerge');
+var merge = require('merge-array-object');
 
 var qpmrc = require('./qpmrc');
 var rest = require('./rest');
@@ -163,12 +163,7 @@ function installCommand(package, argv, spaces, debug, callback) {
                         if (!err) {
                             var gulpJson = JSON.parse(data);                            
 
-                            var dic = buildGulpDictionary(gulpJson)
-
-                            resolve({
-                                json: gulpJson,
-                                dic: dic
-                            });
+                            resolve(gulpJson);
                         } else {
                             reject(err);
                         }
@@ -274,12 +269,17 @@ function installCommand(package, argv, spaces, debug, callback) {
         });
 
         var configureGulpPromise = Q.all([gulpFilePromise, bundlePromises]).then(function(results) {
-            var gulpJson = results[0].json;
+            var gulpJson = results[0];
             
             return Q.all(results[1]).then(function(bundleConfigs) {
                 for (var i = 0; i < bundleConfigs.length; i++) {
                     var bundleConfig = bundleConfigs[i];
 
+                    if (bundleConfig) {
+                        console.log(gulpJson);
+
+                        gulpJson = merge(gulpJson, bundleConfig);    
+                    }
                 }
 
                 return gulpJson;
@@ -380,7 +380,7 @@ function installCommand(package, argv, spaces, debug, callback) {
     }
 
     function bundleUp(source, target, dic) {
-        
+
     }
 }
 
