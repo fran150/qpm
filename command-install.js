@@ -162,7 +162,13 @@ function installCommand(package, argv, spaces, debug, callback) {
                     fs.readFile(gulpJsonFile, 'utf8', function(err, data) {
                         if (!err) {
                             var gulpJson = JSON.parse(data);                            
-                            resolve(gulpJson);
+
+                            var dic = buildGulpDictionary(gulpJson)
+
+                            resolve({
+                                json: gulpJson,
+                                dic: dic
+                            });
                         } else {
                             reject(err);
                         }
@@ -268,15 +274,12 @@ function installCommand(package, argv, spaces, debug, callback) {
         });
 
         var configureGulpPromise = Q.all([gulpFilePromise, bundlePromises]).then(function(results) {
-            var gulpJson = results[0];
+            var gulpJson = results[0].json;
             
             return Q.all(results[1]).then(function(bundleConfigs) {
                 for (var i = 0; i < bundleConfigs.length; i++) {
                     var bundleConfig = bundleConfigs[i];
 
-                    if (bundleConfig) {
-                        gulpJson = merge(gulpJson, bundleConfig);
-                    }                    
                 }
 
                 return gulpJson;
@@ -319,6 +322,65 @@ function installCommand(package, argv, spaces, debug, callback) {
         });        
     } else {
         console.log(chalk.red("Can't find any of the required files. QPM searches on common config file locations, if your proyect has a custom config file location use the -c or --config option."));        
+    }
+
+    function processBundle(bundle, target, bundleName) {
+        for (var i = 0; i < bundle.length; i++) {
+            target[bundle[i]] = bundleName;
+        }
+
+        for (var i = 0; i < bundle.length; i++) {
+            target[bundle[i]] = bundleName;
+        }        
+    }
+
+    function processGulpJson(source, target) {
+        target.include = {};
+        target.exclude = {};
+        
+        if (source.include) {
+            processBundle(source.include, target.include, "main");
+        }
+        
+        if (gulpJson.exclude) {
+            processBundle(source.exclude, target.exclude, "main");
+        }
+        
+        if (source.bundles) {
+            for (var bundleName in source.bundles) {
+                var bundle = source.bundles[bundleName];
+
+                if (utils.isArray(bundle)) {
+                    processBundle(bundle, target.include, bundleName);
+                } else {
+                    if (bundle.include) {
+                        processBundle(bundle.include, target.include, bundleName);
+                    }
+
+                    if (bundle.exclude) {
+                        processBundle(bundle.exclude, target.exclude, bundleName);
+                    }
+                }
+            }            
+        }        
+    }
+
+    function buildGulpDictionary(gulpJson) {
+        var dic = {
+            css: {}
+        };
+
+        processGulpJson(gulpJson, dic);
+
+        if (gulpJson.css) {
+            processGulpJson(gulpJson.css, dic.css);
+        }
+        
+        return dic;
+    }
+
+    function bundleUp(source, target, dic) {
+        
     }
 }
 
