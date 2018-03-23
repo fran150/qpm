@@ -71,7 +71,7 @@ function uninstallCommand(package, argv, spaces, debug, callback) {
             var installed = {};
 
             bower.list(spaces, debug, function (result) {
-                installed = utils.processBowerData(result, installed);
+                installed = utils.processBowerListResult(result, installed);
 
                 // Call bower uninstall
                 if (package) {

@@ -4,7 +4,7 @@ function Utils() {
     var self = this;
     
     // Process the result of bower command to a simpler object
-    this.processBowerData = function(data, result) {
+    this.processBowerListResult = function(data, result) {
         result[data.pkgMeta.name] = {
             name: data.pkgMeta.name,
             dir: data.canonicalDir,
@@ -13,10 +13,24 @@ function Utils() {
     
         if (data.dependencies) {
             for (var index in data.dependencies) {
-                result = self.processBowerData(data.dependencies[index], result);
+                result = self.processBowerListResult(data.dependencies[index], result);
             }            
         }
     
+        return result;
+    }
+
+    this.processBowerInstallResult = function(data, result) {
+        result = {};
+        
+        for (var name in data) {
+            result[name] = {
+                name: name,
+                dir: data[name].canonicalDir,
+                version: data[name].pkgMeta.version
+            };
+        }
+
         return result;
     }
 

@@ -146,8 +146,15 @@ function installCommand(package, argv, spaces, debug, callback) {
                     console.log(chalk.white(spaces + "Bower Installed: [", chalk.green(name), "]"));
                 }
 
+                var mods = {};
+
+                if (bowerPackages) {
+                    // Get the installed package data
+                    mods = utils.processBowerInstallResult(bowerPackages, mods);    
+                }
+
                 // Return installed bower packages
-                resolve(bowerPackages);
+                resolve(mods);
             });
         });
 
@@ -182,7 +189,7 @@ function installCommand(package, argv, spaces, debug, callback) {
                     var mods = {};
 
                     // Get the installed package data
-                    mods = utils.processBowerData(result, mods);
+                    mods = utils.processBowerListResult(result, mods);
 
                     // Return the installed bower modules
                     resolve(mods);
@@ -221,7 +228,8 @@ function installCommand(package, argv, spaces, debug, callback) {
             return promises;
         }); 
 
-        var bundlePromises = bowerListPromise.then(function(mods) {
+        var bundlePromises = Q.all([bowerInstallPromise, quarkConfigPromises]).then(function(data) {
+            var mods = data[0];
             var promises = new Array();
             
             // For each installed bower package
@@ -230,10 +238,12 @@ function installCommand(package, argv, spaces, debug, callback) {
 
                 // Return a promise for each config data
                 promises.push(Q.Promise(function(resolve, reject) {
+                    console.log(bowerConfig.dir + "/bundling.json");
                     fs.exists(bowerConfig.dir + "/bundling.json", function(exists) {
                         if (exists) {
-                            fs.readFile(bowerConfig.dir + '/bundling.json', 'utf8', function(err, fileContent) {
+                            fs.readFile(bowerConfig.dir + '/bundling.json', 'utf8', function(err, fileContent) {                                
                                 if (!err) {
+                                    console.log(fileContent);
                                     var bundleConfig = JSON.parse(fileContent);
                                     resolve(bundleConfig);
                                 } else {
@@ -270,14 +280,13 @@ function installCommand(package, argv, spaces, debug, callback) {
 
         var configureGulpPromise = Q.all([gulpFilePromise, bundlePromises]).then(function(results) {
             var gulpJson = results[0];
-            
+
             return Q.all(results[1]).then(function(bundleConfigs) {
+                console.log(bundleConfigs);
                 for (var i = 0; i < bundleConfigs.length; i++) {
                     var bundleConfig = bundleConfigs[i];
 
                     if (bundleConfig) {
-                        console.log(gulpJson);
-
                         gulpJson = merge(gulpJson, bundleConfig);    
                     }
                 }
@@ -322,65 +331,6 @@ function installCommand(package, argv, spaces, debug, callback) {
         });        
     } else {
         console.log(chalk.red("Can't find any of the required files. QPM searches on common config file locations, if your proyect has a custom config file location use the -c or --config option."));        
-    }
-
-    function processBundle(bundle, target, bundleName) {
-        for (var i = 0; i < bundle.length; i++) {
-            target[bundle[i]] = bundleName;
-        }
-
-        for (var i = 0; i < bundle.length; i++) {
-            target[bundle[i]] = bundleName;
-        }        
-    }
-
-    function processGulpJson(source, target) {
-        target.include = {};
-        target.exclude = {};
-        
-        if (source.include) {
-            processBundle(source.include, target.include, "main");
-        }
-        
-        if (gulpJson.exclude) {
-            processBundle(source.exclude, target.exclude, "main");
-        }
-        
-        if (source.bundles) {
-            for (var bundleName in source.bundles) {
-                var bundle = source.bundles[bundleName];
-
-                if (utils.isArray(bundle)) {
-                    processBundle(bundle, target.include, bundleName);
-                } else {
-                    if (bundle.include) {
-                        processBundle(bundle.include, target.include, bundleName);
-                    }
-
-                    if (bundle.exclude) {
-                        processBundle(bundle.exclude, target.exclude, bundleName);
-                    }
-                }
-            }            
-        }        
-    }
-
-    function buildGulpDictionary(gulpJson) {
-        var dic = {
-            css: {}
-        };
-
-        processGulpJson(gulpJson, dic);
-
-        if (gulpJson.css) {
-            processGulpJson(gulpJson.css, dic.css);
-        }
-        
-        return dic;
-    }
-
-    function bundleUp(source, target, dic) {
-
     }
 }
 
