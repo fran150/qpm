@@ -1,4 +1,5 @@
 var fs = require('fs');
+var Q = require('Q');
 var chalk = require('chalk');
 
 var qpmrc = require('./qpmrc');
@@ -53,70 +54,120 @@ function uninstallCommand(package, argv, spaces, debug, callback) {
 
     // If config file is found
     if (target) {
-        // Reads the config file
-        fs.readFile(target, 'utf8', function (err, fileContent) {
-            // If there's an error reading the config file
-            if (err) {
-                console.log(chalk.red("Error Reading File:"));
-                console.log(chalk.red("%j"), err);
-                return;
-            }
+        // Reads the quark config file
+        var readQuarkConfigPromise = Q.Promise(function(resolve, reject) {
+            fs.readFile(target, 'utf8', function (err, fileContent) {
+                // If there's an error reading the config file
+                if (err) {
+                    console.log(chalk.red("Error Reading File:"));
+                    console.log(chalk.red("%j"), err);
+                    
+                    reject(new Error("Quark's configuration file not found."));
+                }
+    
+                // Verifica el archivo de configuracion
+                if (!quarkConfigurator.checkConfig(fileContent, spaces, debug)) {
+                    console.log(chalk.red("The config file does not contain a valid requireConfigure call with path and shim."));
+                    reject(new Error("Configuration file invalid."));
+                }
 
-            // Verifica el archivo de configuracion
-            if (!quarkConfigurator.checkConfig(fileContent, spaces, debug)) {
-                console.log(chalk.red("The config file does not contain a valid requireConfigure call with path and shim."));
-                return;
-            }
+                resolve(fileContent);
+            });
+        });
 
+        var bowerListPromise = Q.Promise(function(resolve, reject) {
             var installed = {};
 
             bower.list(spaces, debug, function (result) {
                 installed = utils.processBowerListResult(result, installed);
 
+                resolve(installed);
+            });
+        });
+
+        var bowerUninstallPromise = bowerListPromise.then(function(installed) {
+            return Q.Promise(function(resolve, reject) {
                 // Call bower uninstall
                 if (package) {
                     console.log(chalk.green(spaces + "Uninstalling package %s..."), package);
                 }
 
                 bower.uninstall(package, true, "", debug, function (bowerPackages) {
-                    let waiting = 0;
+                    var uninstalled = {};
 
-                    // For each uninstalled bower package
                     for (let name in bowerPackages) {
-                        let bowerConfig = installed[name];
-                        let version = bowerConfig.version;
-
                         console.log(chalk.white(spaces + "Bower Uninstalled: [", chalk.magenta(name), "]"));
 
-                        waiting++;
-                        // Get the package config from REST service
-                        rest.getPackage(name, version, spaces, debug, function (quarkConfig) {
-                            if (quarkConfig) {
-                                if (debug) {
-                                    console.log(chalk.yellow("Uninstall package info:"));
-                                    console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
-                                }
-
-                                console.log(chalk.white(spaces + "Removing Quark configuration for: [", chalk.magenta(name), "]"));
-
-                                fileContent = quarkConfigurator.removePackage(quarkConfig, bowerConfig, fileContent, spaces + "  ", debug);
-                            }
-
-                            waiting--;
-
-                            if (waiting == 0) {
-                                fs.writeFile(target, fileContent, 'utf8', function (err) {
-                                    if (err) {
-                                        console.log(chalk.red("Error Writing File:"));
-                                        console.log(chalk.red("%j"), err);
-                                    }
-
-                                    callback();
-                                });
-                            }
-                        });
+                        uninstalled[name] = {
+                            config: installed[name],
+                            version: installed[name].version
+                        };                        
                     }
+
+                    resolve(uninstalled);
                 });
+            });            
+        });
+
+        var quarkConfigPromises = bowerUninstallPromise.then(function(mods) {
+            var promises = new Array();
+            
+            // For each installed bower package
+            for (let name in mods) {                
+                promises.push(Q.Promise(function(resolve, reject) {
+                    let bowerConfig = mods[name];
+                    let version = bowerConfig.version;
+                                            
+                    // Get the package config from REST service
+                    rest.getPackage(name, version, spaces, debug, function (quarkConfig) {
+                        if (quarkConfig && debug) {
+                            console.log(chalk.yellow("Received package info:"));
+                            console.log(chalk.yellow("%s"), JSON.stringify(quarkConfig, null, 4));
+                        }
+
+                        bowerConfig.quark = quarkConfig;
+
+                        resolve(bowerConfig);
+                    });
+                }));
+            }
+
+            return promises;
+        });
+
+        
+        // With the quark config file and the quark configuration for each module
+        var configureQuarkPromise = Q.all([readQuarkConfigPromise, quarkConfigPromises]).then(function(results) {
+            // Get the bower config file
+            var fileContent = results[0];
+
+            // Wait for all quark configs are ready and apply to the quark's config file
+            return Q.all(results[1]).then(function(bowerConfigs) {
+                for (var i = 0; i < bowerConfigs.length; i++) {
+                    var bowerConfig = bowerConfigs[i];
+
+                    console.log(chalk.white(spaces + "Removing Quark configuration for: [", chalk.magenta(bowerConfig.config.name), "]"));
+
+                    fileContent = quarkConfigurator.removePackage(bowerConfig.quark, bowerConfig, fileContent, spaces + "  ", debug);
+                }
+
+                return fileContent;
+            });
+        });
+
+        // When all the configuration is done write the config file.
+        configureQuarkPromise.then(function(quarkConfigContent) {
+            if (debug) {
+                console.log(chalk.yellow("Writing config file:"));
+                console.log(chalk.yellow("%s"), target);
+            }
+
+            // Write the modified target file
+            fs.writeFile(target, quarkConfigContent, 'utf8', function (err) {
+                if (err) {
+                    console.log(chalk.red("Error Writing File:"));
+                    console.log(chalk.red("%j"), err);
+                }
             });
         });
     } else {

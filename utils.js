@@ -5,19 +5,21 @@ function Utils() {
     
     // Process the result of bower command to a simpler object
     this.processBowerListResult = function(data, result) {
-        result[data.pkgMeta.name] = {
-            name: data.pkgMeta.name,
-            dir: data.canonicalDir,
-            version: data.pkgMeta.version
-        };
-    
-        if (data.dependencies) {
-            for (var index in data.dependencies) {
-                result = self.processBowerListResult(data.dependencies[index], result);
-            }            
+        if (data.missing !== true) {
+            result[data.pkgMeta.name] = {
+                name: data.pkgMeta.name,
+                dir: data.canonicalDir,
+                version: data.pkgMeta.version
+            };
+        
+            if (data.dependencies) {
+                for (var index in data.dependencies) {
+                    result = self.processBowerListResult(data.dependencies[index], result);
+                }            
+            }                    
         }
-    
-        return result;
+
+        return result;    
     }
 
     this.processBowerInstallResult = function(data, result) {

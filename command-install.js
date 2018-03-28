@@ -231,19 +231,26 @@ function installCommand(package, argv, spaces, debug, callback) {
         var bundlePromises = Q.all([bowerInstallPromise, quarkConfigPromises]).then(function(data) {
             var mods = data[0];
             var promises = new Array();
+
+            console.log(chalk.green(spaces + "Searching for bundling info on installed packages..."));            
             
             // For each installed bower package
             for (let name in mods) {
                 let bowerConfig = mods[name];
 
                 // Return a promise for each config data
-                promises.push(Q.Promise(function(resolve, reject) {
-                    console.log(bowerConfig.dir + "/bundling.json");
-                    fs.exists(bowerConfig.dir + "/bundling.json", function(exists) {
-                        if (exists) {
+                promises.push(Q.Promise(function(resolve, reject) {                    
+                    fs.exists(bowerConfig.dir + "/bundling.json", function(exists) {                        
+                        if (exists) {                                    
                             fs.readFile(bowerConfig.dir + '/bundling.json', 'utf8', function(err, fileContent) {                                
                                 if (!err) {
-                                    console.log(fileContent);
+                                    console.log(chalk.white(spaces + "Found bundle config for %s..."), name);
+
+                                    if (debug) {
+                                        console.log(chalk.yellow("Received bundle info:"));
+                                        console.log(chalk.yellow("%s"), JSON.stringify(fileContent, null, 4));
+                                    }
+
                                     var bundleConfig = JSON.parse(fileContent);
                                     resolve(bundleConfig);
                                 } else {
@@ -282,7 +289,6 @@ function installCommand(package, argv, spaces, debug, callback) {
             var gulpJson = results[0];
 
             return Q.all(results[1]).then(function(bundleConfigs) {
-                console.log(bundleConfigs);
                 for (var i = 0; i < bundleConfigs.length; i++) {
                     var bundleConfig = bundleConfigs[i];
 
