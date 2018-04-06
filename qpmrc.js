@@ -1,3 +1,4 @@
+var Q = require('Q');
 var fs = require('fs');
 var merge = require('merge');
 
@@ -9,20 +10,28 @@ function getDefaultConfig() {
 
 module.exports = {
     read: function() {
-        var rcFile = {};
+        return Q.Promise(function(resolve, reject) {
+            var rcFile = {};
 
-        var target = "./.qpmrc";
-
-        if (fs.existsSync(target)) {
-            var fileContent = fs.readFileSync(target, 'utf8');
-
-            rcFile = JSON.parse(fileContent);
-
-            var config = merge.recursive(getDefaultConfig(), rcFile);
-
-            return config;
-        } else {
-            return getDefaultConfig();
-        }
+            var target = "./.qpmrc";
+    
+            fs.exists(target, function(exists) {
+                if (exists) {
+                    fs.readFile(target, 'utf8', function(err, fileContent) {        
+                        if (err) {
+                            reject(new Error(err));
+                        } else {
+                            rcFile = JSON.parse(fileContent);
+            
+                            var config = merge.recursive(getDefaultConfig(), rcFile);
+                
+                            resolve(config);    
+                        }
+                    });
+                } else {
+                    resolve(getDefaultConfig());
+                }
+            });    
+        });
     }
 }
