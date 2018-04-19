@@ -15,23 +15,21 @@ module.exports = {
 
             var target = "./.qpmrc";
     
-            fs.exists(target, function(exists) {
-                if (exists) {
-                    fs.readFile(target, 'utf8', function(err, fileContent) {        
-                        if (err) {
-                            reject(new Error(err));
-                        } else {
-                            rcFile = JSON.parse(fileContent);
-            
-                            var config = merge.recursive(getDefaultConfig(), rcFile);
-                
-                            resolve(config);    
-                        }
-                    });
+            fs.readFile(target, 'utf8', function(err, fileContent) {
+                if (err) {
+                    if (err.code === 'ENOENT') {
+                        resolve(getDefaultConfig());
+                    } else {
+                        reject(new Error(err));
+                    }
                 } else {
-                    resolve(getDefaultConfig());
+                    rcFile = JSON.parse(fileContent);
+    
+                    var config = merge.recursive(getDefaultConfig(), rcFile);
+        
+                    resolve(config);    
                 }
-            });    
+            });
         });
     }
 }

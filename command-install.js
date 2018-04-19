@@ -10,82 +10,102 @@ var quarkConfigurator = require('./quark-configurator');
 
 var utils = require('./utils');
 
+function getTargetFile(argv) {
+    return Q.Promise(function(resolve, reject) {
+        // Config file to modify
+        let target = "";
+
+        // Check for c option
+        if (argv["c"]) {
+            target = argv["c"];
+        }
+        
+        // Check for config parameter
+        if (!target && argv["config"]) {
+            target = argv["config"];
+        }
+        
+        // If not target specified as parameter check for config on qpmrc
+        if (!target) {
+            var config = qpmrc.read();
+
+            if (config && config.config) {
+                target = config.config;
+            }
+        }
+
+        // If no target config specified as parameter or in .qpmrc
+        if (!target) {
+            // Check on module's standard config file location
+            utils.fileExists('tests/app/require.config.js').then(function(exists) {
+                if (exists) {
+                    target = 'tests/app/require.config.js';
+                }                
+            }).then(utils.fileExists('src/app/require.config.js').then(function(exists) {
+                if (exists) {
+                    target = 'src/app/require.config.js';
+                }
+            })).then(function() {
+                resolve(target);
+            });
+        } else {
+            utils.fileExists(argv["config"]).then(function(exists) {
+                if (!exists) {
+                    resolve("")
+                } else {
+                    resolve(argv["config"]);
+                }
+            });
+        }
+    });
+}
+
+function getBaseDir(argv) {
+    return Q.Promise(function(resolve, reject) {
+        // Base dir for application
+        let baseDir = "";
+
+        // Check for b option
+        if (argv["b"]) {
+            baseDir = argv["b"];
+        }
+        
+        // Check for base parameter
+        if (!baseDir && argv["base"]) {
+            baseDir = argv["base"];
+        }
+        
+        // Check for config on qpmrc
+        if (!baseDir) { 
+            var config = qpmrc.read();
+
+            if (config && config.base) {
+                baseDir = config.base;
+            }
+        }
+
+        // If no base dir specified as parameter or in .qpmrc
+        if (!baseDir) {
+            // Set default
+            baseDir = "./src";
+        }
+
+        utils.fileExists(baseDir).then(function(exists) {
+            if (exists) {
+                resolve(baseDir);                
+            } else {
+                var msg = "Can't find a base dir for the application. By default qpm uses ./src if your base dir is custom use -b or --base parameters to specify it";
+                console.log(chalk.red(msg));
+                reject(new Error(msg));
+            }
+        });
+    });
+}
 // Install command
 function installCommand(package, argv, spaces, debug, callback) {
     spaces = spaces || "";
 
-    // Config file to modify
-    let target = "";
 
-    // Check for c option
-    if (argv["c"]) {
-        target = argv["c"];
-    }
-    
-    // Check for config parameter
-    if (!target && argv["config"]) {
-        target = argv["config"];
-    }
-    
-    // If not target specified as parameter check for config on qpmrc
-    if (!target) {
-        var config = qpmrc.read();
-
-        if (config && config.config) {
-            target = config.config;
-        }
-    }
-
-    // If no target config specified as parameter or in .qpmrc
-    if (!target) {
-        // Check on module's standard config file location
-        if (fs.existsSync('tests/app/require.config.js')) {
-            target = 'tests/app/require.config.js';
-        }
-
-        // Check on app's standand config file location
-        if (fs.existsSync('src/app/require.config.js')) {
-            target = 'src/app/require.config.js';
-        }
-    } else {
-        // Check if the file really exists
-        if (!fs.existsSync(argv["config"])) {
-            target = "";
-        }
-    }
-
-    // Base dir for application
-    let baseDir = "";
-
-    // Check for b option
-    if (argv["b"]) {
-        baseDir = argv["b"];
-    }
-    
-    // Check for base parameter
-    if (!baseDir && argv["base"]) {
-        baseDir = argv["base"];
-    }
-    
-    // Check for config on qpmrc
-    if (!baseDir) { 
-        var config = qpmrc.read();
-
-        if (config && config.base) {
-            baseDir = config.base;
-        }
-    }
-
-    // If no base dir specified as parameter or in .qpmrc
-    if (!baseDir) {
-        // Set default
-        baseDir = "./src";
-    }
-
-    // Validate base dir
-    if (!fs.existsSync(baseDir)) {
-        console.log(chalk.red("Can't find a base dir for the application. By default qpm uses ./src if your base dir is custom use -b or --base parameters to specify it"));
-    }
 
     let updateGulp = false;
     let gulpJsonFile = "";
