@@ -39,7 +39,7 @@ switch (command) {
         var package = argv["_"][1];
 
         // Call install
-        installCommand(package, argv, "", debug, end);
+        installCommand(package, "", debug, end);
         break;
 
     case "uninstall":

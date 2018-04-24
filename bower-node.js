@@ -115,11 +115,13 @@ module.exports = {
                     if (debug) {
                         console.log(chalk.yellow("Received Bower Package:"));
                         console.log(chalk.yellow("%s"), JSON.stringify(data, null, 4));
-                    }
+                    }                    
 
                     var result = {};
         
                     for (var name in data) {
+                        console.log(chalk.white(spaces + "Bower Installed: [", chalk.green(name), "]"));
+
                         result[name] = {
                             name: name,
                             dir: data[name].canonicalDir,
