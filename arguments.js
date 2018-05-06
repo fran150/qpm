@@ -1,4 +1,7 @@
+
 var Q = require('Q');
+var chalk = require('chalk');
+
 var qpmrc = require('./qpmrc');
 var utils = require('./utils');
 
@@ -46,31 +49,31 @@ function ArgumentProcessor() {
                     console.log(chalk.yellow(spaces + "Searching config file on standard locations..."))
                 }    
 
-                // Check on module's standard config file location
-                utils.fileExists('tests/app/require.config.js').then(function(exists) {
-                    if (exists) {
+                Q.all([utils.fileExists('tests/app/require.config.js'), utils.fileExists('src/app/require.config.js')]).then(function(exists) {
+                    if (exists[0]) {
                         if (debug) {
                             console.log(chalk.yellow(spaces + "Found on module's standard location..."))
                         }    
 
                         target = 'tests/app/require.config.js';
-                    }                
-                }).then(utils.fileExists('src/app/require.config.js').then(function(exists) {
-                    if (exists) {
+                    }
+
+                    if (exists[1]) {
                         if (debug) {
                             console.log(chalk.yellow(spaces + "Found on app's standard location..."))
                         }    
                         
                         target = 'src/app/require.config.js';
                     }
-                })).then(function() {
-                    if (debug) {
-                        console.log(chalk.yellow(spaces + "Found configuration file in ")+ chalk.white(target));
+
+                    if (target) {
+                        resolve(target);
+                    } else {
+                        reject("Quark's configuration file not found");
                     }
-                
-                    resolve(target);
                 }).catch(function (error) {
                     console.log(chalk.red("Error trying to find the quark configuration file"));
+                    console.log(error);
                     throw new Error(error);
                 });
             } else {

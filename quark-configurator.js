@@ -8,6 +8,7 @@ module.exports = {
         let parsed = esprima.parse(fileContent);
 
         if (debug) {
+            console.log(chalk.yellow(spaces + "Checking config file validity..."));
             console.log(chalk.yellow(spaces + "Checking config file for requireConfigure..."));
         }
         

@@ -1,3 +1,4 @@
+const fs = require('fs');
 var Q = require('Q');
 
 function Utils() {
@@ -5,7 +6,7 @@ function Utils() {
 
     this.fileExists = function(fileName) {
         return Q.Promise(function(resolve) {
-            fs.stat(fileName, function(err, stats) {
+            fs.stat(fileName, function(err, stats) {                
                 if (err) {
                     resolve(false);
                 } else {

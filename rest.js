@@ -11,23 +11,28 @@ module.exports = {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
 
-            var config = qpmrc.read();
+            qpmrc.read().then(function(config) {
+                var reqConfig = {
+                    url: config.server + '/package/' + name + '/' + version,
+                    json: true
+                }
+        
+                // Merge with default options
+                reqConfig = merge.recursive(reqConfig, config.http);
     
-            var reqConfig = {
-                url: config.server + '/package/' + name + '/' + version,
-                json: true
-            }
-    
-            // Merge with default options
-            reqConfig = merge.recursive(reqConfig, config.http);
-    
-            request.get(reqConfig, function(error, response, body) {
-                if (!error) {
-                    resolve(body);
-                } else {
-                    reject(new Error(error));
-                }                
-            });    
+                if (debug) {
+                    console.log(spaces + chalk.yellow("Searching quark config for package " + chalk.white(name + "#" + version)));
+                }
+        
+                request.get(reqConfig, function(error, response, body) {
+                    if (!error) {
+                        resolve(body);
+                    } else {
+                        console.log(error);
+                        reject(new Error(error));
+                    }                
+                });    
+            })    
         });
     }
 }
