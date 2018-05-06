@@ -8,7 +8,7 @@ function ArgumentProcessor() {
     var self = this;
 
     // Get's the target configuration file for install / uninstall command
-    this.getConfigPath = function() {    
+    this.getConfigPath = function(debug, spaces) {    
         return Q.Promise(function(resolve, reject) {
             // Config file to modify
             let target = "";
@@ -25,34 +25,68 @@ function ArgumentProcessor() {
             
             // If not target specified as parameter check for config on qpmrc
             if (!target) {
+                if (debug) {
+                    console.log(chalk.yellow(spaces + "Config parameter not found, checking qpmrc file..."))
+                }
+
                 var config = qpmrc.read();
 
                 if (config && config.config) {
                     target = config.config;
+                } else {
+                    if (debug) {
+                        console.log(chalk.yellow(spaces + "Config parameter not found on qpmrc..."))
+                    }    
                 }
             }
 
             // If no target config specified as parameter or in .qpmrc
             if (!target) {
+                if (debug) {
+                    console.log(chalk.yellow(spaces + "Searching config file on standard locations..."))
+                }    
+
                 // Check on module's standard config file location
                 utils.fileExists('tests/app/require.config.js').then(function(exists) {
                     if (exists) {
+                        if (debug) {
+                            console.log(chalk.yellow(spaces + "Found on module's standard location..."))
+                        }    
+
                         target = 'tests/app/require.config.js';
                     }                
                 }).then(utils.fileExists('src/app/require.config.js').then(function(exists) {
                     if (exists) {
+                        if (debug) {
+                            console.log(chalk.yellow(spaces + "Found on app's standard location..."))
+                        }    
+                        
                         target = 'src/app/require.config.js';
                     }
                 })).then(function() {
+                    if (debug) {
+                        console.log(chalk.yellow(spaces + "Found configuration file in ")+ chalk.white(target));
+                    }
+                
                     resolve(target);
+                }).catch(function (error) {
+                    console.log(chalk.red("Error trying to find the quark configuration file"));
+                    throw new Error(error);
                 });
             } else {
                 utils.fileExists(argv["config"]).then(function(exists) {
                     if (!exists) {
                         resolve("")
                     } else {
+                        if (debug) {
+                            console.log(chalk.yellow(spaces + "Found configuration file in ")+ chalk.white(argv["config"]));
+                        }
+                            
                         resolve(argv["config"]);
                     }
+                }).catch(function(error) {
+                    console.log(chalk.red("Error trying to validate the specified configuration file"));
+                    throw new Error(error);                    
                 });
             }
         });

@@ -13,20 +13,15 @@ function installCommand(package, spaces, debug, callback) {
     spaces = spaces || "";
 
     // Gets the target config file from arguments or qpmrc
-    var configPath = arg.getConfigPath();
+    var configPathPromise = arg.getConfigPath(debug, spaces);
     // Gets the gulp configuration
-    var gulpConfPath = arg.getGulpConfPath();
+    var gulpConfPathPromise = arg.getGulpConfPath(debug, spaces);
     // Gets the base dir for the proyect
-    var baseDir = arg.getBaseDir();
+    var baseDirPromise = arg.getBaseDir(debug, spaces);
 
-    // If config file is found
-    if (!configPath) {
-        console.log(chalk.red("Can't find any of the required files. QPM searches on common config file locations, if your proyect has a custom config file location use the -c or --config option."));        
-        return false;
-    }
-    
     // Read quark config promise
-    var readQuarkConfigPromise = Q.Promise(function(resolve, reject) {
+    var readQuarkConfigPromise = 
+        Q.Promise(function(resolve, reject) {
         // Reads the config file
         fs.readFile(configPath, 'utf8', function(err, fileContent) {
             // If there's an error reading the config file
