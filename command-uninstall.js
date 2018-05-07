@@ -10,7 +10,7 @@ var quarkConfigurator = require('./quark-configurator');
 var utils = require('./utils');
 
 // Uninstall command
-function uninstallCommand(package, argv, spaces, debug, callback) {
+function uninstallCommand(package, argv, debug, verbose, spaces, callback) {
     spaces = spaces || "";
 
     // Config file to modify

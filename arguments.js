@@ -1,4 +1,3 @@
-
 var Q = require('Q');
 var chalk = require('chalk');
 
@@ -7,11 +6,37 @@ var utils = require('./utils');
 
 var argv = require('minimist')(process.argv.slice(2));
 
+// Process specified arguments
 function ArgumentProcessor() {
     var self = this;
 
+    // Is Debug mode
+    this.isDebug = function() {
+        return argv["d"] || argv["debug"];        
+    }
+
+    // Is Verbose mode
+    this.isVerbose = function() {
+        return argv["v"] || argv["verbose"];        
+    }
+
+    // Must show help
+    this.isHelp = function() {
+        return argv["h"] || argv["help"];        
+    }
+    
+    // Get the specified command name
+    this.getCommand = function() {
+        return argv["_"][0];
+    }
+
+    // Get the specified package name
+    this.getPackage = function() {
+        return argv["_"][1];
+    }
+
     // Get's the target configuration file for install / uninstall command
-    this.getConfigPath = function(debug, spaces) {    
+    this.getConfigPath = function(spaces) {    
         return Q.Promise(function(resolve, reject) {
             // Config file to modify
             let target = "";
@@ -28,75 +53,104 @@ function ArgumentProcessor() {
             
             // If not target specified as parameter check for config on qpmrc
             if (!target) {
-                if (debug) {
-                    console.log(chalk.yellow(spaces + "Config parameter not found, checking qpmrc file..."))
+                if (self.isDebug()) {
+                    console.log(chalk.yellow(spaces + "Config parameter not specified, checking .qpmrc file"))
                 }
 
-                var config = qpmrc.read();
-
-                if (config && config.config) {
-                    target = config.config;
-                } else {
-                    if (debug) {
-                        console.log(chalk.yellow(spaces + "Config parameter not found on qpmrc..."))
-                    }    
-                }
-            }
-
-            // If no target config specified as parameter or in .qpmrc
-            if (!target) {
-                if (debug) {
-                    console.log(chalk.yellow(spaces + "Searching config file on standard locations..."))
-                }    
-
-                Q.all([utils.fileExists('tests/app/require.config.js'), utils.fileExists('src/app/require.config.js')]).then(function(exists) {
-                    if (exists[0]) {
-                        if (debug) {
-                            console.log(chalk.yellow(spaces + "Found on module's standard location..."))
-                        }    
-
-                        target = 'tests/app/require.config.js';
-                    }
-
-                    if (exists[1]) {
-                        if (debug) {
-                            console.log(chalk.yellow(spaces + "Found on app's standard location..."))
-                        }    
-                        
-                        target = 'src/app/require.config.js';
-                    }
-
-                    if (target) {
-                        resolve(target);
+                // Read qpmrc file
+                qpmrc.read(self.isDebug(), self.isVerbose(), spaces + "  ").then(function(config) {
+                    // If config specified in .qpmrc
+                    if (config && config.config) {
+                        if (self.isDebug()) {
+                            console.log(chalk.yellow(spaces + "Checking if config file specified in .qpmrc exists: " + chalk.white(target)));
+                        }
+        
+                        // Validate if config file specified in .qpmrc exists
+                        utils.fileExists(config.config).then(function(exists) {
+                            if (exists) {
+                                resolve(config.config);
+                            } else {
+                                var msg = "Quark config file specified in .qpmrc doesn't exists";
+                                console.log(chalk.red(msg));
+                                reject(msg);
+                            }
+                        })
+                        .catch(function(error) {
+                            console.log(chalk.red("Can't read config file specified in .qpmrc"));
+                            reject(error);
+                        });
                     } else {
-                        reject("Quark's configuration file not found");
-                    }
-                }).catch(function (error) {
-                    console.log(chalk.red("Error trying to find the quark configuration file"));
-                    console.log(error);
-                    throw new Error(error);
+                        if (self.isDebug()) {
+                            console.log(chalk.yellow(spaces + "Quark config location not found on .qpmrc"))
+                            console.log(chalk.yellow(spaces + "Searching config file on standard locations"));
+                        }
+                        
+                        // If config file not found on .qpmrc seach on standard locations
+                        Q.all([utils.fileExists('tests/app/require.config.js'), utils.fileExists('tests/app/require.config.js')]).then(function(exists) {
+                            if (exists[0]) {
+                                if (self.isDebug()) {
+                                    console.log(chalk.yellow(spaces + "Found on module's standard location"))
+                                }    
+        
+                                target = 'tests/app/require.config.js';
+                            }
+        
+                            if (exists[1]) {
+                                if (self.isDebug()) {
+                                    console.log(chalk.yellow(spaces + "Found on app's standard location"))
+                                }    
+                                
+                                target = 'src/app/require.config.js';
+                            }
+        
+                            if (target) {
+                                if (self.isDebug()) {
+                                    console.log(chalk.yellow(spaces + "Found quark configuration file in " + chalk.white(target)));
+                                }    
+                                
+                                resolve(target);
+                            } else {
+                                console.log(chalk.red("Quark's configuration file not found"));
+                                reject("Quark's configuration file not found");
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log(chalk.red("Error trying to find the quark configuration file"));
+                            reject(error);
+                        });                        
+                    }    
+                })
+                .catch(function(error) {
+                    console.log(chalk.red("Error reading .qpmrc file"));
+                    reject(error);
                 });
             } else {
-                utils.fileExists(argv["config"]).then(function(exists) {
+                if (self.isDebug()) {
+                    console.log(chalk.yellow(spaces + "Checking if specified config file exists: " + chalk.white(target)));
+                }
+
+                // If quark config location is specified by parameters check if file exists
+                utils.fileExists(target).then(function(exists) {
                     if (!exists) {
-                        resolve("")
+                        reject("Quark's configuration file not found");
                     } else {
-                        if (debug) {
-                            console.log(chalk.yellow(spaces + "Found configuration file in ")+ chalk.white(argv["config"]));
+                        if (self.isDebug()) {
+                            console.log(chalk.yellow(spaces + "Configuration file exists."));
                         }
                             
-                        resolve(argv["config"]);
+                        resolve(target);
                     }
-                }).catch(function(error) {
+                })
+                .catch(function(error) {
                     console.log(chalk.red("Error trying to validate the specified configuration file"));
-                    throw new Error(error);                    
-                });
+                    reject(error);
+                })
             }
         });
     }
 
     // Get the base dir where the app and bower_moudules high
-    this.getBaseDir = function() {
+    this.getBaseDir = function(spaces) {
         return Q.Promise(function(resolve, reject) {
             // Base dir for application
             let baseDir = "";
@@ -111,30 +165,76 @@ function ArgumentProcessor() {
                 baseDir = argv["base"];
             }
             
-            // Check for config on qpmrc
+            // If base dir not specified as argument
             if (!baseDir) { 
-                var config = qpmrc.read();
-
-                if (config && config.base) {
-                    baseDir = config.base;
+                if (self.isDebug()) {
+                    console.log(chalk.yellow(spaces + "Base dir parameter not specified, checking .qpmrc file"))
                 }
-            }
+                
+                // Search on .qpmrc
+                qpmrc.read(self.isDebug(), self.isVerbose(), spaces + "  ").then(function(config) {
+                    // If config has a base parameter then use that value if not
+                    // use standard base dir
+                    if (config && config.base) {
+                        if (self.isDebug()) {
+                            console.log(chalk.yellow(spaces + "Base dir config found on .qpmrc"))
+                        }
+                        
+                        // Use specified in .qpmrc
+                        baseDir = config.base;
+                    } else {
+                        if (self.isDebug()) {
+                            console.log(chalk.yellow(spaces + "Base dir config not found on .qpmrc"))
+                            console.log(chalk.yellow(spaces + "Checking standard base dir"));
+                        }
+                        
+                        // Set default
+                        baseDir = "./src";
+                    }
 
-            // If no base dir specified as parameter or in .qpmrc
-            if (!baseDir) {
-                // Set default
-                baseDir = "./src";
+                    // Check if the specified base dir exists
+                    utils.fileExists(baseDir).then(function(exists) {
+                        if (exists) {
+                            if (self.isDebug()) {
+                                console.log(chalk.yellow(spaces + "Standard base dir found: " + chalk.white(baseDir)));
+                            }
+                                
+                            resolve(baseDir);                
+                        } else {
+                            var msg = "Can't find a base dir for the application. By default qpm uses ./src if your base dir is custom use -b or --base parameters to specify it";
+                            console.log(chalk.red(msg));
+                            reject(new Error(msg));
+                        }
+                    })
+                    .catch(function(error) {
+                        console.log(chalk.red("Error reading base dir"));
+                        reject(error);
+                    });
+                })
+                .catch(function(error) {
+                    console.log(chalk.red("Error reading .qpmrc file"));
+                    reject(error);
+                });
+            } else {
+                // If base dir specified as argument check if exists
+                utils.fileExists(baseDir).then(function(exists) {
+                    if (exists) {
+                        if (self.isDebug()) {
+                            console.log(chalk.yellow(spaces + "Standard base dir specified by arguments: " + chalk.white(baseDir)));
+                        }
+                            
+                        resolve(baseDir);
+                    } else {
+                        var msg = "Can't find the specified base dir.";
+                        console.log(chalk.red(msg));
+                        reject(new Error(msg));
+                    }
+                })
+                .catch(function(error) {
+                    console.log(chalk.red("An error ocurred reading the specified base dir"));
+                    reject(error);
+                });
             }
-
-            utils.fileExists(baseDir).then(function(exists) {
-                if (exists) {
-                    resolve(baseDir);                
-                } else {
-                    var msg = "Can't find a base dir for the application. By default qpm uses ./src if your base dir is custom use -b or --base parameters to specify it";
-                    console.log(chalk.red(msg));
-                    reject(new Error(msg));
-                }
-            });
         });
     }
 

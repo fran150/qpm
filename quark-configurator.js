@@ -3,11 +3,13 @@ var escodegen = require('escodegen');
 const fsPath = require('path');
 const chalk = require('chalk');
 
+var args = require('./arguments');
+
 module.exports = {
-    checkConfig: function (fileContent, spaces, debug) {
+    checkConfig: function (fileContent, spaces) {
         let parsed = esprima.parse(fileContent);
 
-        if (debug) {
+        if (args.isDebug()) {
             console.log(chalk.yellow(spaces + "Checking config file validity..."));
             console.log(chalk.yellow(spaces + "Checking config file for requireConfigure..."));
         }
@@ -36,7 +38,7 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "paths") {
                                             pathFound = true;
 
-                                            if (debug) {
+                                            if (args.isDebug()) {
                                                 console.log(chalk.yellow(spaces + "Path config found..."));
                                             }                                            
                                         }
@@ -44,7 +46,7 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {                                        
                                             shimFound = true;
 
-                                            if (debug) {
+                                            if (args.isDebug()) {
                                                 console.log(chalk.yellow(spaces + "Shim config found..."));
                                             }                                                                                        
                                         }
@@ -64,7 +66,7 @@ module.exports = {
         return false;
     },
 
-    addPackage: function (quarkData, bowerConfig, fileContent, spaces, debug, baseDir) {
+    addPackage: function (quarkData, bowerConfig, fileContent, spaces, baseDir) {
         if (!spaces) spaces = "";
 
         let parsed = esprima.parse(fileContent);
@@ -174,7 +176,7 @@ module.exports = {
         return generated;
     },
 
-    removePackage: function (quarkData, bowerConfig, fileContent, spaces, debug) {
+    removePackage: function (quarkData, bowerConfig, fileContent, spaces) {
         if (!spaces) spaces = "";
 
         let parsed = esprima.parse(fileContent);

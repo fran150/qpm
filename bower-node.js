@@ -3,6 +3,8 @@ var chalk = require('chalk');
 var inquirer = require('inquirer');
 var Q = require('Q');
 
+var args = require('./arguments');
+
 function log(data, spaces, callback) {
     var output = "";
 
@@ -78,8 +80,12 @@ function prompt(prompts, callback) {
     inquirer.prompt(prompts).then(callback);
 }
 
- function processBowerListResult(data, result) {
+ function processBowerListResult(data, result, spaces) {
     if (data.missing !== true) {
+        if (args.isDebug()) {
+            console.log(chalk.yellow(spaces + "On listing found bower package: " + chalk.white(data.pkgMeta.name)));
+        }
+
         result[data.pkgMeta.name] = {
             name: data.pkgMeta.name,
             dir: data.canonicalDir,
@@ -88,7 +94,7 @@ function prompt(prompts, callback) {
     
         if (data.dependencies) {
             for (var index in data.dependencies) {
-                result = processBowerListResult(data.dependencies[index], result);
+                result = processBowerListResult(data.dependencies[index], result, spaces);
             }            
         }                    
     }
@@ -98,7 +104,7 @@ function prompt(prompts, callback) {
 
 module.exports = {
     // Call bower install for the specified dependency
-    install: function(dependency, save, spaces, debug) {
+    install: function(dependency, save, spaces) {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
         
@@ -106,21 +112,28 @@ module.exports = {
     
             if (dependency) {
                 dependencies.push(dependency);
-                console.log(chalk.cyan(spaces + "Bower Checking %s..."), dependency);
+                console.log(chalk.cyan(spaces + "Bower install %s..."), dependency);
+            }
+
+            if (args.isDebug()) {
+                console.log(chalk.yellow(spaces + "Calling bower install"));
             }
             
             // Call bower install command
             var install = bower.commands.install(dependencies, { save: save }, { interactive: true })
-                .on('end', function(data) {
-                    if (debug) {
-                        console.log(chalk.yellow("Received Bower Package:"));
-                        console.log(chalk.yellow("%s"), JSON.stringify(data, null, 4));
+                .on('end', function(data) {                    
+                    if (data && data.name && args.isDebug()) {
+                        console.log(spaces + chalk.yellow("Received bower package: ") + chalk.white(data.name));
+
+                        if (args.isVerbose()) {
+                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                        }                        
                     }                    
 
                     var result = {};
         
                     for (var name in data) {
-                        console.log(chalk.white(spaces + "Bower Installed: [", chalk.green(name), "]"));
+                        console.log(chalk.green(spaces + "Bower Installed: [", chalk.white(name), "]"));
 
                         result[name] = {
                             name: name,
@@ -143,20 +156,24 @@ module.exports = {
     },
 
     // Call bower list
-    list: function (spaces, debug) {
+    list: function (spaces) {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
 
+            if (args.isDebug()) {
+                console.log(chalk.yellow(spaces + "Calling bower list"));
+            }            
+            
             // Call bower list command
             var list = bower.commands.list([], {}, { interactive: true })
                 .on('end', function (data) {
-                    if (debug) {
+                    if (args.isDebug()) {
                         console.log(chalk.yellow("Finished listing bower packages"));
                     }
 
                     var result = {};
 
-                    processBowerListResult(data, result);
+                    processBowerListResult(data, result, spaces + "  ");
   
                     resolve(result);
                 })
@@ -172,7 +189,7 @@ module.exports = {
     },
 
     // Call bower install for the specified dependency
-    uninstall: function (dependency, save, spaces, debug) {
+    uninstall: function (dependency, save, spaces) {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
 
@@ -180,13 +197,13 @@ module.exports = {
     
             if (dependency) {
                 dependencies.push(dependency);
-                console.log(chalk.cyan(spaces + "Bower Checking %s..."), dependency);
+                console.log(chalk.cyan(spaces + "Bower uninstall %s..."), dependency);
             }
     
             // Call bower install command
             var uninstall = bower.commands.uninstall(dependencies, { save: save }, { interactive: true })
                 .on('end', function (data) {
-                    if (debug) {
+                    if (args.isDebug()) {
                         console.log(chalk.yellow("Uninstalled Bower Package:"));
                         console.log(chalk.yellow("%s"), JSON.stringify(data, null, 4));
                     }

@@ -2,23 +2,14 @@
 var chalk = require('chalk');
 var help = require('./help');
 
+var args = require('./arguments');
+
 // Get required libs
-var installCommand = require('./command-install');
-var uninstallCommand = require('./command-uninstall');
-
-// Process command arguments
-var argv = require('minimist')(process.argv.slice(2));
-
-// Obtain the debug flag
-var debug = argv["d"];
-
-if (debug) {
-    console.log(chalk.yellow("Received commands parameters:"));
-    console.log(chalk.yellow("%s"), JSON.stringify(argv, null, 4));
-}
+var commandInstall = require('./command-install');
+var commandUninstall = require('./command-uninstall');
 
 // Get command "qpm [command]"
-var command = argv["_"][0];
+var command = args.getCommand();
 
 // If no command specified show help
 if (!command) {
@@ -27,7 +18,7 @@ if (!command) {
 }
 
 // If command specified and -h parameter received show help
-if (command && (argv["h"] || argv["help"])) {
+if (command && args.isHelp()) {
     help.show(command);
     return;
 }
@@ -36,18 +27,26 @@ if (command && (argv["h"] || argv["help"])) {
 switch (command) {
     case "install":
         // Get package name
-        var package = argv["_"][1];
+        var package = args.getPackage();
+
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command install"));
+        }
 
         // Call install
-        installCommand(package, "", debug, end);
+        commandInstall(package, "", end);
         break;
 
     case "uninstall":
         // Get package name
-        var package = argv["_"][1];
+        var package = args.getPackage();
 
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command uninstall"));
+        }
+        
         // Call install
-        uninstallCommand(package, argv, "", debug, end);
+        commandUninstall(package, "", end);
         break;
         
     default:
