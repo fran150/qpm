@@ -1,6 +1,7 @@
 var fs = require('fs');
 var chalk = require('chalk');
-var Q = require('Q');
+var Q = require('q');
+var merge = require('merge-array-object');
 
 var args = require('./arguments');
 var quarkConfig = require('./quark-config');
@@ -8,37 +9,29 @@ var rest = require('./rest');
 var bower = require('./bower-node');
 var quarkConfigurator = require('./quark-configurator');
 
-// Uninstall command
-function uninstallCommand(package, spaces, callback) {
+// Install command
+function linkCommand(package, spaces, callback) {
     spaces = spaces || "";
 
     // Gets the target config file from arguments, qpmrc or common location
     var configPathPromise = args.getConfigPath(spaces + "  ");
 
+    // Gets the base dir
+    var baseDirPromise = args.getBaseDir(spaces + "  ");
+
     // Reads the quark config file
     var readQuarkConfigPromise = quarkConfig.read(configPathPromise, spaces + "  ");
-    
+
     // Get quark's config for each bower listed package
     var packageConfigPromise = Q.Promise(function(resolve, reject) {
-        bower.list(spaces + "  ").then(function(installed) {
-            if (args.isVerbose()) {
-                console.log(chalk.white(installed));
-            }
-
-            bower.uninstall(package, true, spaces + "  ").then(function(bowerPackages) {
-                var uninstalled = {};
-
-                for (let name in bowerPackages) {
-                    console.log(chalk.white(spaces + "Bower Uninstalled: [", chalk.magenta(name), "]"));
-
-                    uninstalled[name] = {
-                        config: installed[name],
-                        version: installed[name].version
-                    };                        
+        bower.link(package, spaces + "  ").then(function() {
+            bower.list(spaces + "  ").then(function(mods) {
+                if (args.isVerbose()) {
+                    console.log(chalk.white(mods));
                 }
                 
                 // Get the package config from REST service
-                rest.getPackages(uninstalled, spaces + "  ").then(function(data) {                    
+                rest.getPackages(mods, spaces + "  ").then(function(data) {                    
                     if (data) {
                         for (var name in data) {
                             if (args.isDebug()) {
@@ -46,33 +39,35 @@ function uninstallCommand(package, spaces, callback) {
                             }
     
                             // Append the quarks config to the bower info object
-                            uninstalled[name].quark = data[name];
+                            mods[name].quark = data[name];
                         }
                     }
 
                     // Return the bower config
-                    resolve(uninstalled);
+                    resolve(mods);
                 })
                 .catch(function (error) {
                     console.log(chalk.red("Error downloading quark config for packages"));
                     reject(error)
-                });                
-            })
+                });                        
+            })    
             .catch(function(error) {
-                console.log(chalk.red("Error executing bower uninstall"));
+                console.log(chalk.red("Error executing bower list"));
                 reject(error);
-            });            
+            })
         })
         .catch(function(error) {
-            console.log(chalk.red("Error executing bower list"));
+            console.log(chalk.red("Error executing bower install"));
             reject(error);
-        })    
-    });
-
-    var configureQuarkPromise = Q.all([readQuarkConfigPromise, packageConfigPromise]).then(function(results) {
+        });
+    })
+    
+    // With the quark config file and the quark configuration for each module
+    var configureQuarkPromise = Q.all([readQuarkConfigPromise, packageConfigPromise, baseDirPromise]).then(function(results) {
         // Get the bower config file
         var fileContent = results[0];
         var bowerConfigs = results[1];
+        var baseDir = results[2];
 
         // Wait for all quark configs are ready and apply to the quark's config file
         for (var name in bowerConfigs) {
@@ -80,7 +75,7 @@ function uninstallCommand(package, spaces, callback) {
 
             if (bowerConfig.quark) {
                 // Add package to quarks config
-                fileContent = quarkConfigurator.removePackage(bowerConfig.quark, bowerConfig, fileContent, spaces + "  ");
+                fileContent = quarkConfigurator.addPackage(bowerConfig.quark, bowerConfig, fileContent, spaces + "  ", baseDir);
             }
         }
 
@@ -108,7 +103,7 @@ function uninstallCommand(package, spaces, callback) {
     .catch(function(error) {
         throw new Error(error);
     })
-    .done();    
+    .done();        
 }
 
-module.exports = uninstallCommand;
+module.exports = linkCommand;

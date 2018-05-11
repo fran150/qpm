@@ -29,15 +29,9 @@ function installCommand(package, spaces, callback) {
                 if (args.isVerbose()) {
                     console.log(chalk.white(mods));
                 }
-
-                var packages = {};                
-
-                for (let name in mods) {
-                    packages[name] = mods[name].version;
-                }
                 
                 // Get the package config from REST service
-                rest.getPackages(packages, spaces + "  ").then(function(data) {                    
+                rest.getPackages(mods, spaces + "  ").then(function(data) {                    
                     if (data) {
                         for (var name in data) {
                             if (args.isDebug()) {
@@ -92,8 +86,6 @@ function installCommand(package, spaces, callback) {
     Q.all([configureQuarkPromise, configPathPromise]).then(function(results) {
         var quarkConfigContent = results[0];
         var configPath = results[1];
-
-        //var gulpConfigContent = results[1];
         
         if (args.isDebug()) {
             console.log(chalk.yellow("Writing config file:"));
@@ -107,21 +99,6 @@ function installCommand(package, spaces, callback) {
                 console.log(chalk.red("%j"), err);
             }
         });
-/*
-        if (updateGulp) {
-            if (debug) {
-                console.log(chalk.yellow("Writing gulp config file:"));
-                console.log(chalk.yellow("%s"), gulpJsonFile);
-            }
-
-            // Write the modified target file
-            fs.writeFile(gulpJsonFile, JSON.stringify(gulpConfigContent, null, 4), 'utf8', function (err) {
-                if (err) {
-                    console.log(chalk.red("Error Writing File:"));
-                    console.log(chalk.red("%j"), err);
-                }
-            });                    
-        }*/
     })
     .catch(function(error) {
         throw new Error(error);

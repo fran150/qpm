@@ -241,6 +241,5 @@ module.exports = {
 
         let generated = escodegen.generate(parsed);
         return generated;
-    }
-    
+    }    
 }

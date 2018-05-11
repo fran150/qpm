@@ -203,10 +203,13 @@ module.exports = {
             // Call bower install command
             var uninstall = bower.commands.uninstall(dependencies, { save: save }, { interactive: true })
                 .on('end', function (data) {
-                    if (args.isDebug()) {
-                        console.log(chalk.yellow("Uninstalled Bower Package:"));
-                        console.log(chalk.yellow("%s"), JSON.stringify(data, null, 4));
-                    }
+                    if (data && data.name && args.isDebug()) {
+                        console.log(spaces + chalk.yellow("Uninstalled bower package: ") + chalk.white(data.name));
+
+                        if (args.isVerbose()) {
+                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                        }                        
+                    }                    
     
                     resolve(data);
                 })
@@ -220,4 +223,55 @@ module.exports = {
                 .on('prompt', prompt);    
         });
     },    
+
+    // Call bower link for the specified dependency
+    link: function(dependency, spaces) {
+        return Q.Promise(function(resolve, reject) {
+            spaces = spaces || "";
+        
+            var dependencies = new Array();
+    
+            if (dependency) {
+                dependencies.push(dependency);
+                console.log(chalk.cyan(spaces + "Bower link %s..."), dependency);
+            }
+
+            if (args.isDebug()) {
+                console.log(chalk.yellow(spaces + "Calling bower link"));
+            }
+            
+            // Call bower install command
+            var link = bower.commands.link(dependency, undefined, { interactive: true })
+                .on('end', function(data) {
+                    if (data && data.name && args.isDebug()) {
+                        console.log(spaces + chalk.yellow("Linked bower package: ") + chalk.white(dependency));
+
+                        if (args.isVerbose()) {
+                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                        }                        
+                    }
+
+                    var result = {};
+        
+                    console.log(chalk.green(spaces + "Bower Linked: [", chalk.white(dependency), "]"));
+
+                    result[dependency] = {
+                        name: dependency,
+                        dir: data["dst"],
+                        version: ''
+                    };
+                
+                    resolve(data);
+                })
+                .on('log', function(data, callback) {
+                    log(data, spaces, callback);
+                })
+                .on('error', function(data) {
+                    error(data);
+                    reject(new Error(data));
+                })
+                .on('prompt', prompt);    
+        })
+    },
+    
 }

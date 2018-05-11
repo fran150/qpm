@@ -7,6 +7,7 @@ var args = require('./arguments');
 // Get required libs
 var commandInstall = require('./command-install');
 var commandUninstall = require('./command-uninstall');
+var commandLink = require('./command-link');
 
 // Get command "qpm [command]"
 var command = args.getCommand();
@@ -47,6 +48,18 @@ switch (command) {
         
         // Call install
         commandUninstall(package, "", end);
+        break;
+
+    case "link":
+        // Get package name
+        var package = args.getPackage();
+
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command uninstall"));
+        }
+        
+        // Call install
+        commandLink(package, "", end);
         break;
         
     default:
