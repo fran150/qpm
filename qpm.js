@@ -61,6 +61,18 @@ switch (command) {
         // Call install
         commandLink(package, "", end);
         break;
+
+    case "bundle":
+        // Get package name
+        var package = args.getPackage();
+
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command bundle"));
+        }
+        
+        // Call install
+        commandBundle(package, "", end);
+        break;        
         
     default:
         help.show(command);
