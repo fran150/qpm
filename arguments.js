@@ -239,25 +239,55 @@ function ArgumentProcessor() {
     }
 
     // Gets the gulp config file
-    this.getGulpConfPath = function() {
-        let gulpJsonFile;
+    this.getGulpConfPath = function(spaces) {
+        return Q.Promise(function(resolve, reject) {
+            let gulpJsonFile;
 
-        // Check for gulp file parameter
-        if (argv["g"]) {
-            gulpJsonFile = argv["g"];
-        }
+            // Check for gulp file parameter
+            if (argv["g"]) {
+                gulpJsonFile = argv["g"];
+            }
 
-        // Check for bundles parameters
-        if (!gulpJsonFile && argv["gulpfile"]) {
-            gulpJsonFile = argv["gulpfile"];
-        }
+            // Check for bundles parameters
+            if (!gulpJsonFile && argv["gulpfile"]) {
+                gulpJsonFile = argv["gulpfile"];
+            }
 
-        // If no bundling json specified set the default location
-        if (!gulpJsonFile || gulpJsonFile === true) {
-            gulpJsonFile = "./gulp.conf.json";
-        }
-        
-        return gulpJsonFile;
+            // If no bundling json specified set the default location
+            if (!gulpJsonFile || gulpJsonFile === true) {
+                gulpJsonFile = "./gulp.conf.json";
+
+                if (self.isDebug()) {
+                    console.log(chalk.yellow(spaces + "Gulp config file location not specified by argument. Using default config."));
+                }
+            } else {
+                if (self.isDebug()) {
+                    console.log(chalk.yellow(spaces + "Gulp config file location specified by argument:" + chalk.white(gulpJsonFile)));
+                }
+            }
+
+            if (self.isDebug()) {
+                console.log(chalk.yellow(spaces + "Checking if gulp config file exists."));
+            }
+            
+            // If base dir specified as argument check if exists
+            utils.fileExists(gulpJsonFile).then(function(exists) {
+                if (exists) {
+                    if (self.isDebug()) {
+                        console.log(chalk.yellow(spaces + "Gulp conf file found!"));
+                    }
+                            
+                    resolve(gulpJsonFile);
+                } else {
+                    console.log(chalk.red("Gulp config file not found. If not using standard location use -g argument to specify the path"));
+                    reject(new Error("Gulp config file not found"));
+                }
+            })
+            .catch(function(error) {
+                console.log(chalk.red("Error trying to found if gulp config file exists"));
+                reject(error);
+            })
+        })
     }
 }
 

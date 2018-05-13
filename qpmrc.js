@@ -36,7 +36,7 @@ function Qpmrc() {
                                 console.log(chalk.yellow(spaces + ".qpmrc file not found using default config"))
     
                                 if (verbose) {
-                                    console.log(chalk.yellow(config));
+                                    console.log("%j", JSON.stringify(config));
                                 }
                             }
                             savedConfig = config;                            
@@ -55,7 +55,7 @@ function Qpmrc() {
                         var config = merge.recursive(getDefaultConfig(), rcFile);
     
                         if (debug && verbose) {
-                            console.log(chalk.yellow(config));
+                            console.log("%j", JSON.stringify(config));
                         }
             
                         savedConfig = config;

@@ -80,7 +80,7 @@ function prompt(prompts, callback) {
     inquirer.prompt(prompts).then(callback);
 }
 
- function processBowerListResult(data, result, spaces) {
+function processBowerListResult(data, result, spaces) {
     if (data.missing !== true) {
         if (args.isDebug()) {
             console.log(chalk.yellow(spaces + "On listing found bower package: " + chalk.white(data.pkgMeta.name)));
@@ -126,7 +126,7 @@ module.exports = {
                         console.log(spaces + chalk.yellow("Received bower package: ") + chalk.white(data.name));
 
                         if (args.isVerbose()) {
-                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                            console.log("%s", JSON.stringify(data, null, 4));
                         }                        
                     }                    
 
@@ -207,7 +207,7 @@ module.exports = {
                         console.log(spaces + chalk.yellow("Uninstalled bower package: ") + chalk.white(data.name));
 
                         if (args.isVerbose()) {
-                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                            console.log("%s", JSON.stringify(data, null, 4));
                         }                        
                     }                    
     
@@ -247,7 +247,7 @@ module.exports = {
                         console.log(spaces + chalk.yellow("Linked bower package: ") + chalk.white(dependency));
 
                         if (args.isVerbose()) {
-                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                            console.log("%s", JSON.stringify(data, null, 4));
                         }                        
                     }
 
@@ -297,7 +297,7 @@ module.exports = {
                         console.log(spaces + chalk.yellow("Info bower package: ") + chalk.white(dependency));
 
                         if (args.isVerbose()) {
-                            console.log(chalk.white("%s"), JSON.stringify(data, null, 4));
+                            console.log("%s", JSON.stringify(data, null, 4));
                         }                        
                     }
 

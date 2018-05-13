@@ -9,7 +9,7 @@ var bower = require('./bower-node');
 var utils = require('./utils');
 
 // Install command
-function bundleCommand(package, spaces, callback) {
+function rebundleCommand(package, spaces, callback) {
     spaces = spaces || "";
 
     // Gets the gulp config file location
@@ -28,13 +28,7 @@ function bundleCommand(package, spaces, callback) {
                 } else {
                     try {
                         var gulpConf = JSON.parse(gulpConfContent);
-
-                        if (utils.isAutoBundled(package, gulpConf)) {
-                            console.log(chalk.red("The specified package has been already auto bundled"));
-                            reject(new Error("Alredy auto bundled"));
-                        } else {
-                            resolve(gulpConf);
-                        }                        
+                        resolve(gulpConf);
                     } catch(ex) {
                         console.log(chalk.red("Error parsing gulp conf file"));
                         reject(ex);
@@ -48,30 +42,22 @@ function bundleCommand(package, spaces, callback) {
     });
 
     // Get quark's config for each bower listed package
-    var readQuarkConfigPromise = Q.Promise(function(resolve, reject) {
-        bower.list(spaces + "  ").then(function(mods) {
-            let mod = mods[package];
-            
-            if (mod) {                
-                if (args.isDebug()) {
-                    console.log(chalk.yellow(spaces + "Bower package found " + chalk.white(package)));
-                
-                    if (args.isVerbose()) {
-                        console.log("%j", JSON.stringify(mod));
-                    }
-                }
-            }
+    var readQuarkConfigPromises = bower.list(spaces + "  ").then(function(mods) {
+        var promises = new Array();
 
-            if (mod && mod.dir) {
+        for (let name in mods) {
+            let mod = mods[name];
+            
+            promises.push(Q.Promise(function(resolve, reject) {
                 if (args.isDebug()) {
                     console.log(chalk.yellow(spaces + "Trying to read file " + chalk.white(mod.dir + "/quark.json")));
                 }
-
+    
                 fs.readFile(mod.dir + "/quark.json", "utf8", function(err, quarkFileContent) {
                     if (err) {
                         if (err.code === 'ENOENT') {
                             if (args.isDebug()) {
-                                console.log(chalk.yellow(spaces + "Quark config file not found."));
+                                console.log(chalk.yellow(spaces + "Quark config file not found for " + chalk.white(mod.name)));
                             }
                             
                             resolve();
@@ -89,7 +75,7 @@ function bundleCommand(package, spaces, callback) {
                                 }
                             }
                             
-                            var quarkConfig = {
+                            let quarkConfig = {
                                 name: mod.name,
                                 config: JSON.parse(quarkFileContent)
                             }
@@ -100,29 +86,44 @@ function bundleCommand(package, spaces, callback) {
                             reject(ex);
                         }
                     }    
-                });
-            } else {
-                resolve();
-            }            
-        })
-        .catch(function(error) {
-            console.log(chalk.red("Error executing bower list"));
-            reject(error);
-        });
+                });    
+            }));
+        }
+
+        return promises;
+    })
+    .catch(function(error) {
+        console.log(chalk.red("Error executing bower list"));        
+        throw new Error(error);
     });
     
     var configureGulpPromise = Q.Promise(function(resolve, reject) {
-        Q.all([readGulpConfPromise, readQuarkConfigPromise]).then(function(results) {
-            var gulpConf = results[0];
-            var quarkConf = results[1];
+        Q.all([readGulpConfPromise, readQuarkConfigPromises]).then(function(results) {
+            let gulpConf = results[0];
+            let quarkConfigPromises = results[1];
 
-            if (quarkConf) {
-                var merged = merge(quarkConf.config.bundling, gulpConf, true);
-                merged = utils.markAutoBundled(package, merged);
+            Q.all(quarkConfigPromises).then(function(quarkConfs) {
+                var merged = gulpConf;
+
+                for (let i = 0; i < quarkConfs.length; i++) {
+                    let quarkConf = quarkConfs[i];
+
+                    if (quarkConf) {
+                        if (!utils.isAutoBundled(quarkConf.name, merged)) {
+                            console.log(spaces + chalk.green("Bundling " + chalk.white(quarkConf.name)));
+                            merged = merge(quarkConf.config.bundling, merged, true);
+                            merged = utils.markAutoBundled(quarkConf.name, merged);
+                        } else {
+                            console.log(spaces + chalk.blue("Quark package " + chalk.white(quarkConf.name) + " is already auto bundled."))
+                        }
+                    }
+                }
+
                 resolve(merged);
-            } else {
-                resolve(gulpConf);
-            }            
+            })
+            .catch(function(error) {
+                reject(error);
+            });                
         })
         .catch(function(error) {
             reject(error);
@@ -159,4 +160,4 @@ function bundleCommand(package, spaces, callback) {
     .done();        
 }
 
-module.exports = bundleCommand;
+module.exports = rebundleCommand;

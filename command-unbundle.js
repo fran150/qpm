@@ -9,7 +9,7 @@ var bower = require('./bower-node');
 var utils = require('./utils');
 
 // Install command
-function bundleCommand(package, spaces, callback) {
+function unbundleCommand(package, spaces, callback) {
     spaces = spaces || "";
 
     // Gets the gulp config file location
@@ -28,13 +28,7 @@ function bundleCommand(package, spaces, callback) {
                 } else {
                     try {
                         var gulpConf = JSON.parse(gulpConfContent);
-
-                        if (utils.isAutoBundled(package, gulpConf)) {
-                            console.log(chalk.red("The specified package has been already auto bundled"));
-                            reject(new Error("Alredy auto bundled"));
-                        } else {
-                            resolve(gulpConf);
-                        }                        
+                        resolve(gulpConf);
                     } catch(ex) {
                         console.log(chalk.red("Error parsing gulp conf file"));
                         reject(ex);
@@ -51,7 +45,7 @@ function bundleCommand(package, spaces, callback) {
     var readQuarkConfigPromise = Q.Promise(function(resolve, reject) {
         bower.list(spaces + "  ").then(function(mods) {
             let mod = mods[package];
-            
+
             if (mod) {                
                 if (args.isDebug()) {
                     console.log(chalk.yellow(spaces + "Bower package found " + chalk.white(package)));
@@ -110,6 +104,57 @@ function bundleCommand(package, spaces, callback) {
             reject(error);
         });
     });
+
+    function getAllFiles(config, files, parentProperty) {
+        var f = files || {};
+        var n = parentProperty || "";
+
+        if (utils.isObject(config)) {
+            for (var name in config) {
+                getAllFiles(config[name], f, name);
+            }
+        } else if (utils.isArray(config)) {
+            for (var i = 0; i < config.length; i++) {
+                f[config[i]] = n;
+            }
+        }
+
+        return f;
+    }
+
+    function hasProperty(object) {
+        for (var name in object) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function deleteFiles(config, files) {
+        if (utils.isObject(config)) {
+            for (var name in config) {
+                deleteFiles(config[name], files);
+
+                if (utils.isArray(config[name]) && config[name].length == 0) {
+                    delete config[name];
+                } else if (utils.isObject(config[name]) && !hasProperty(config[name])) {
+                    delete config[name];
+                }
+            }
+        } else if (utils.isArray(config)) {
+            for (var i = config.length - 1; i >= 0; i--) {
+                if (files[config[i]]) {
+                    config.splice(i, 1);
+                }
+            }
+
+            if (config.length == 0) {
+                delete config;
+            }
+        }
+
+        return config;
+    }
     
     var configureGulpPromise = Q.Promise(function(resolve, reject) {
         Q.all([readGulpConfPromise, readQuarkConfigPromise]).then(function(results) {
@@ -117,9 +162,14 @@ function bundleCommand(package, spaces, callback) {
             var quarkConf = results[1];
 
             if (quarkConf) {
-                var merged = merge(quarkConf.config.bundling, gulpConf, true);
-                merged = utils.markAutoBundled(package, merged);
-                resolve(merged);
+                console.log(spaces + chalk.green("Unbundling package ") + chalk.white(package));
+
+                var files = getAllFiles(quarkConf);
+                gulpConf = deleteFiles(gulpConf, files);
+
+                gulpConf = utils.unmarkAutoBundled(package, gulpConf);
+
+                resolve(gulpConf);
             } else {
                 resolve(gulpConf);
             }            
@@ -133,6 +183,7 @@ function bundleCommand(package, spaces, callback) {
     var writeGulpFile = Q.Promise(function(resolve, reject) {
         Q.all([gulpConfPathPromise, configureGulpPromise]).then(function(results) {
             var path = results[0];
+
             var content = JSON.stringify(results[1], null, 4);
     
             fs.writeFile(path, content, 'utf8', function (err) {
@@ -159,4 +210,4 @@ function bundleCommand(package, spaces, callback) {
     .done();        
 }
 
-module.exports = bundleCommand;
+module.exports = unbundleCommand;

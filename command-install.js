@@ -1,7 +1,6 @@
 var fs = require('fs');
 var chalk = require('chalk');
 var Q = require('q');
-var merge = require('merge-array-object');
 
 var args = require('./arguments');
 var quarkConfig = require('./quark-config');

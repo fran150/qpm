@@ -8,6 +8,9 @@ var args = require('./arguments');
 var commandInstall = require('./command-install');
 var commandUninstall = require('./command-uninstall');
 var commandLink = require('./command-link');
+var commandBundle = require('./command-bundle');
+var commandRebundle = require('./command-rebundle');
+var commandUnbundle = require('./command-unbundle');
 
 // Get command "qpm [command]"
 var command = args.getCommand();
@@ -73,6 +76,27 @@ switch (command) {
         // Call install
         commandBundle(package, "", end);
         break;        
+
+    case "rebundle":
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command rebundle"));
+        }
+        
+        // Call install
+        commandRebundle(package, "", end);
+        break;    
+        
+    case "unbundle":
+        // Get package name
+        var package = args.getPackage();
+
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command unbundle"));
+        }
+        
+        // Call install
+        commandUnbundle(package, "", end);
+        break;          
         
     default:
         help.show(command);
