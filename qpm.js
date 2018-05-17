@@ -11,6 +11,7 @@ var commandLink = require('./command-link');
 var commandBundle = require('./command-bundle');
 var commandRebundle = require('./command-rebundle');
 var commandUnbundle = require('./command-unbundle');
+var commandRegister = require('./command-register');
 
 // Get command "qpm [command]"
 var command = args.getCommand();
@@ -96,6 +97,15 @@ switch (command) {
         
         // Call install
         commandUnbundle(package, "", end);
+        break;      
+        
+    case "register":
+        if (args.isDebug()) {
+            console.log(chalk.yellow("Starting command register"));
+        }
+        
+        // Call install
+        commandRegister("", end);
         break;          
         
     default:
