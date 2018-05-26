@@ -2,19 +2,19 @@
 var chalk = require('chalk');
 var help = require('./help');
 
-var args = require('./arguments');
+var logger = require('./logger');
 
 // Get required libs
-var commandInstall = require('./command-install');
-var commandUninstall = require('./command-uninstall');
-var commandLink = require('./command-link');
-var commandBundle = require('./command-bundle');
-var commandRebundle = require('./command-rebundle');
-var commandUnbundle = require('./command-unbundle');
-var commandRegister = require('./command-register');
+var commandInstall = require('./command/install');
+var commandUninstall = require('./command/uninstall');
+var commandLink = require('./command/link');
+var commandBundle = require('./command/bundle');
+var commandRebundle = require('./command/rebundle');
+var commandUnbundle = require('./command/unbundle');
+var commandRegister = require('./command/register');
 
 // Get command "qpm [command]"
-var command = args.getCommand();
+var command = argv["_"][0];
 
 // If no command specified show help
 if (!command) {
@@ -32,11 +32,9 @@ if (command && args.isHelp()) {
 switch (command) {
     case "install":
         // Get package name
-        var package = args.getPackage();
+        var package = argv["_"][1];
 
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command install"));
-        }
+        logger.debug("Starting command install");
 
         // Call install
         commandInstall(package, "", end);
@@ -44,44 +42,36 @@ switch (command) {
 
     case "uninstall":
         // Get package name
-        var package = args.getPackage();
+        var package = argv["_"][1];
 
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command uninstall"));
-        }
-        
+        logger.debug("Starting command uninstall");
+
         // Call install
         commandUninstall(package, "", end);
         break;
 
     case "link":
         // Get package name
-        var package = args.getPackage();
+        var package = argv["_"][1];
 
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command uninstall"));
-        }
-        
+        logger.debug("Starting command link");
+                
         // Call install
         commandLink(package, "", end);
         break;
 
     case "bundle":
         // Get package name
-        var package = args.getPackage();
+        var package = argv["_"][1];
 
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command bundle"));
-        }
+        logger.debug("Starting command bundle");
         
         // Call install
         commandBundle(package, "", end);
         break;        
 
     case "rebundle":
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command rebundle"));
-        }
+        logger.debug("Starting command rebundle");
         
         // Call install
         commandRebundle(package, "", end);
@@ -89,21 +79,17 @@ switch (command) {
         
     case "unbundle":
         // Get package name
-        var package = args.getPackage();
+        var package = argv["_"][1];
 
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command unbundle"));
-        }
+        logger.debug("Starting command unbundle");
         
         // Call install
         commandUnbundle(package, "", end);
         break;      
         
     case "register":
-        if (args.isDebug()) {
-            console.log(chalk.yellow("Starting command register"));
-        }
-        
+        logger.debug("Starting command register");
+
         // Call install
         commandRegister("", end);
         break;          
