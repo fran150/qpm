@@ -1,4 +1,5 @@
 var Q = require('q');
+var chalk = require('chalk');
 
 var logger = require('../utils/logger');
 var qpmrc = require('../utils/qpmrc');

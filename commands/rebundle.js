@@ -5,9 +5,9 @@ var merge = require('merge-array-object');
 
 var getGulpConfPath = require('../path-resolvers/gulp-config');
 
-var rest = require('./rest');
-var bower = require('./bower-node');
-var utils = require('./utils');
+var rest = require('../utils/rest');
+var bower = require('../utils/bower-node');
+var utils = require('../utils/utils');
 var bundleConfig = require('../utils/bundle-config');
 
 // Install command

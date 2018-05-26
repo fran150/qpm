@@ -2,16 +2,18 @@
 var chalk = require('chalk');
 var help = require('./help');
 
-var logger = require('./logger');
+var logger = require('./utils/logger');
 
 // Get required libs
-var commandInstall = require('./command/install');
-var commandUninstall = require('./command/uninstall');
-var commandLink = require('./command/link');
-var commandBundle = require('./command/bundle');
-var commandRebundle = require('./command/rebundle');
-var commandUnbundle = require('./command/unbundle');
-var commandRegister = require('./command/register');
+var commandInstall = require('./commands/install');
+var commandUninstall = require('./commands/uninstall');
+var commandLink = require('./commands/link');
+var commandBundle = require('./commands/bundle');
+var commandRebundle = require('./commands/rebundle');
+var commandUnbundle = require('./commands/unbundle');
+var commandRegister = require('./commands/register');
+
+var argv = require('minimist')(process.argv.slice(2));
 
 // Get command "qpm [command]"
 var command = argv["_"][0];
@@ -23,7 +25,7 @@ if (!command) {
 }
 
 // If command specified and -h parameter received show help
-if (command && args.isHelp()) {
+if (command && (argv['h'] || argv['help'])) {
     help.show(command);
     return;
 }

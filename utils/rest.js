@@ -1,6 +1,7 @@
 var Q = require('Q');
 var merge = require('merge');
 var request = require('request');
+var chalk = require('chalk');
 
 var qpmrc = require('./qpmrc');
 var logger = require('./logger');
@@ -11,7 +12,7 @@ module.exports = {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
 
-            qpmrc.read(args.isDebug(), args.isVerbose(), spaces).then(function(config) {
+            qpmrc.read(spaces).then(function(config) {
                 var reqConfig = {
                     url: config.server + '/package/' + name + '/' + version,
                     json: true
@@ -43,9 +44,9 @@ module.exports = {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
 
-            qpmrc.read(args.isDebug(), args.isVerbose(), spaces).then(function(config) {
+            qpmrc.read(spaces).then(function(config) {
                 var reqConfig = {
-                    url: config.server + '/package',
+                    url: config.server + '/package/search',
                     json: true,
                     body: packages
                 }

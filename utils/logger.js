@@ -12,7 +12,7 @@ module.exports = {
     verbose: function(text, spaces) {
         spaces = spaces || "";
 
-        if (argv["v"] || argv["verbose"]) {
+        if ((argv["d"] || argv["debug"]) && (argv["v"] || argv["verbose"])) {
             console.log(chalk.bold.white("[") + chalk.bold.yellow(" VERBOSE ") + chalk.bold.white("] " + spaces + text));
         }
     },
@@ -30,5 +30,10 @@ module.exports = {
         spaces = spaces || "";
         
         console.log(chalk.bold.white("[") + chalk.bold.blue(" CONFIG ") + chalk.bold.white("] " + spaces + text));        
+    },
+    info: function(text, spaces) {
+        spaces = spaces || "";
+        
+        console.log(chalk.bold.white("[") + chalk.bold.green(" INFO ") + chalk.bold.white("] " + spaces + text));
     }    
 }

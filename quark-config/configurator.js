@@ -119,8 +119,8 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {
                                             let shims = property.value.properties;
 
-                                            if (quarkData.shims && quarkData.shims != null) {
-                                                for (let newShim in quarkData.shims) {
+                                            if (quarkData.shim && quarkData.shim != null) {
+                                                for (let newShim in quarkData.shim) {
                                                     let found = false;
 
                                                     shims.forEach(function(shim) {
@@ -130,7 +130,7 @@ module.exports = {
                                                     });
 
                                                     if (!found) {
-                                                        let shim = quarkData.shims[newShim];
+                                                        let shim = quarkData.shim[newShim];
 
                                                         let code = "var temp = { '" + newShim + "': { deps: [";
                                                         let first = true;
@@ -209,8 +209,8 @@ module.exports = {
                                         if (property.key.type == "Identifier" && property.key.name == "shim") {
                                             let shims = property.value.properties;
 
-                                            if (quarkData.shims && quarkData.shims != null) {
-                                                for (let newShim in quarkData.shims) {
+                                            if (quarkData.shim && quarkData.shim != null) {
+                                                for (let newShim in quarkData.shim) {
                                                     shims.forEach(function (shim) {
                                                         if (shim.key.value == newShim) {
                                                             var index = shims.indexOf(shim);

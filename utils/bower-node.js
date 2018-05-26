@@ -3,7 +3,7 @@ var chalk = require('chalk');
 var inquirer = require('inquirer');
 var Q = require('Q');
 
-var logger = require("./utils/logger");
+var logger = require("./logger");
 
 function log(data, spaces, callback) {
     var output = "";
@@ -126,7 +126,7 @@ module.exports = {
                     var result = {};
         
                     for (var name in data) {
-                        logger.bower("Installed: [", chalk.green(name), "]", spaces);
+                        logger.bower("Installed: [" + chalk.green(name) + "]", spaces);
 
                         result[name] = {
                             name: name,
@@ -279,7 +279,7 @@ module.exports = {
 
                     var result = {};
         
-                    logger.bower("Info: [", chalk.bold.green(dependency), "]", spaces);
+                    logger.bower("Info: [" + chalk.bold.green(dependency) + "]", spaces);
 
                     result[dependency] = {
                         name: dependency,

@@ -7,8 +7,8 @@ var getQuarkConfigPath = require('../path-resolvers/quark-config');
 var getRequireBaseDir = require('../path-resolvers/require-base');
 var quarkConfigReader = require('../quark-config/reader');
 var quarkConfigurator = require('../quark-config/configurator');
-var rest = require('./rest');
-var bower = require('./bower-node');
+var rest = require('../utils/rest');
+var bower = require('../utils/bower-node');
 
 // Install command
 function linkCommand(package, spaces, callback) {

@@ -1,6 +1,5 @@
 var Q = require('Q');
 var fs = require('fs');
-var chalk = require('chalk');
 var merge = require('merge');
 
 var logger = require("./logger");

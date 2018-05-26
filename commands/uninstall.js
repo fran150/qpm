@@ -17,7 +17,7 @@ function uninstallCommand(package, spaces, callback) {
     var configPathPromise = getQuarkConfigPath(spaces + "  ");
 
     // Reads the quark config file
-    var readQuarkConfigPromise = quarkConfigReader(configPathPromise, spaces + "  ");
+    var readQuarkConfigPromise = quarkConfigReader.read(configPathPromise, spaces + "  ");
     
     // Get quark's config for each bower listed package
     var packageConfigPromise = Q.Promise(function(resolve, reject) {
@@ -28,22 +28,26 @@ function uninstallCommand(package, spaces, callback) {
                 var uninstalled = {};
 
                 for (let name in bowerPackages) {
-                    logger.info("Bower Uninstalled: [", chalk.magenta(name), "]");
+                    logger.bower("Bower Uninstalled: [" + chalk.magenta(name) + "]");
 
                     uninstalled[name] = {
-                        config: installed[name],
+                        name: bowerPackages[name],
                         version: installed[name].version
-                    };                        
+                    };
                 }
-                
+
                 // Get the package config from REST service
-                rest.getPackages(uninstalled, spaces + "  ").then(function(data) {                    
+                rest.getPackages(uninstalled, spaces + "  ").then(function(data) {
                     if (data) {
-                        for (var name in data) {
+                        for (var i = 0; i < data.length; i++) {
+                            var name = data[i].name;
+
                             logger.debug("Quark configuration found for package: " + chalk.white(name));
     
-                            // Append the quarks config to the bower info object
-                            uninstalled[name].quark = data[name];
+                            if (uninstalled[name]) {
+                                // Append the quarks config to the bower info object
+                                uninstalled[name].quark = data[i];
+                            }
                         }
                     }
 

@@ -1,5 +1,6 @@
 var fs = require('fs');
 var Q = require('Q');
+var chalk = require('chalk');
 
 var logger = require('../utils/logger');
 var quarkConfigurator = require('./configurator');
