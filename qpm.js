@@ -30,11 +30,20 @@ if (command && (argv['h'] || argv['help'])) {
     return;
 }
 
+function getPackage(required) {
+    var package = argv["_"][1];
+
+    if (required && !package) {
+        logger.error("Must specify a package name");
+        throw new Error("Package name not specified");
+    }
+}
+
 // Execute selected command
 switch (command) {
     case "install":
         // Get package name
-        var package = argv["_"][1];
+        var package = getPackage(false);
 
         logger.debug("Starting command install");
 
@@ -44,7 +53,7 @@ switch (command) {
 
     case "uninstall":
         // Get package name
-        var package = argv["_"][1];
+        var package = getPackage(true);
 
         logger.debug("Starting command uninstall");
 
@@ -54,7 +63,7 @@ switch (command) {
 
     case "link":
         // Get package name
-        var package = argv["_"][1];
+        var package = getPackage(true);
 
         logger.debug("Starting command link");
                 
@@ -64,7 +73,7 @@ switch (command) {
 
     case "bundle":
         // Get package name
-        var package = argv["_"][1];
+        var package = getPackage(true);
 
         logger.debug("Starting command bundle");
         
@@ -81,7 +90,7 @@ switch (command) {
         
     case "unbundle":
         // Get package name
-        var package = argv["_"][1];
+        var package = getPackage(true);
 
         logger.debug("Starting command unbundle");
         

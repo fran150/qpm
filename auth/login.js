@@ -1,9 +1,11 @@
+var Q = require('q');
 const octokit = require('@octokit/rest')();
 var inquirer = require('inquirer');
 var chalk = require('chalk');
-var args = require('./arguments');
 
-function Login(spaces) {
+var logger = require('../utils/logger');
+
+function login(spaces) {
     return Q.Promise(function(resolve, reject) {
         var questions = [
             {
@@ -17,7 +19,7 @@ function Login(spaces) {
                 type: 'password'
             }
         ];
-        
+
         inquirer.prompt(questions).then(function(answers) {
             octokit.authenticate({
                 type: 'basic',
@@ -25,37 +27,28 @@ function Login(spaces) {
                 password: answers.password
             });    
     
-            if (args.isDebug()) {
-                console.log(spaces + chalk.yellow("Creando autorización GitHub..."));
-            }    
-    
+            logger.debug("Requesting Github an access token with the specified user and password");
+
             octokit.authorization.create({
                 scopes: ['user', 'repo'],
-                note: 'Qpm command line client (' + new Date().toISOString() + ')'
+                note: 'QPM command line client (' + new Date().toISOString() + ')'
             }).then(function(data) {
-    
-                if (args.isDebug()) {
-                    console.log(spaces + chalk.yellow("Autorización GitHub obtenida correctamente..."));
-    
-                    if (args.isVerbose()) {
-                        console.log(chalk.white(data));
-                    }
-                }
+                logger.debug("Access token obtained");
+                logger.verbose(JSON.stringify(data, null, 4));
 
-                resolve(data);
+                resolve(data.data);
             }).catch(function(err) {
                 var error = JSON.parse(err);
+
                 if (error.message == 'Bad credentials') {
-                    console.log(chalk.red("Error authenticating user."));
+                    logger.error("Error authenticating user.");
                 } else {
-                    console.log(err);
+                    logger.error(err);
                 }
             });
-
-            reject(err);
         });    
     }) 
 }
 
-module.exports = Login;
+module.exports = login;
 

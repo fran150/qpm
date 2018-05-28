@@ -5,6 +5,7 @@ var merge = require('merge-array-object');
 
 var getGulpConfPath = require('../path-resolvers/gulp-config');
 
+var logger = require('../utils/logger');
 var rest = require('../utils/rest');
 var bower = require('../utils/bower-node');
 var utils = require('../utils/utils');

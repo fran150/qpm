@@ -8,66 +8,41 @@ var logger = require("./logger");
 function log(data, spaces, callback) {
     var output = "";
 
+    if (data.level == 'warn') {
+        output += spaces + chalk.yellow("WARN ") + chalk.bold.magenta(data.id) + " " + data.message;
+    }
+    
     if (data.level == 'action') {
-        output += spaces + "   " + chalk.cyan(data.id);
+        output += spaces + chalk.green("ACTN ") + chalk.bold.magenta(data.id);
 
         if (data.data && data.data.pkgMeta) {
-            output += " [" + chalk.white(data.data.pkgMeta.name) + "]";
+            output += " [" + chalk.bold.blue(data.data.pkgMeta.name) + "]";
         }
     }
 
     if (data.level == 'conflict') {
-        logger.bower(data.message, spaces + "    ");
+        if (data.id == 'mutual') {
+            output += spaces + chalk.bold.red("CONFL ") + data.message + "\n";
+        } else {
+            output += spaces + chalk.bold.red("CONFL ") + data.message + "\n";
 
-        for (var i = 0; i < data.data.picks.length; i++) {
-            var pick = data.data.picks[i];
-            var pkg = pick.pkgMeta;
-
-            logger.bower((i + 1) + ") " + pkg.name + "#" + pkg.version, spaces + "       ");
-
-            for (var j = 0; j < pick.dependants.length; j++) {
-                var dep = pick.dependants[j].pkgMeta;
-
-                logger.bower("Depends " + dep.name + "#" + dep.version, spaces + "         ");
+            for (var i = 0; i < data.data.picks.length; i++) {
+                var pick = data.data.picks[i];
+                var pkg = pick.pkgMeta;
+    
+                output += spaces + (i + 1) + ") " + pkg.name + "#" + pkg.version;
+    
+                for (var j = 0; j < pick.dependants.length; j++) {
+                    var dep = pick.dependants[j].pkgMeta;
+    
+                    output += " Depends of " + dep.name + "#" + dep.version + "\n";
+                }
             }
         }
     }
 
     if (output) {
-        logger.bower(output);
-    }
-}
-
-function logUninstall(data, spaces, callback) {
-    var output = "";
-
-    if (data.level == 'action') {
-        output += spaces + "   " + chalk.cyan(data.id);
-
-        if (data.data && data.data.name) {
-            output += " [" + chalk.white(data.data.name) + "]";
-        }
-    }
-
-    if (data.level == 'conflict') {
-        logger.bower(data.message, spaces + "    ");
-
-        for (var i = 0; i < data.data.picks.length; i++) {
-            var pick = data.data.picks[i];
-            var pkg = pick.pkgMeta;
-
-            logger.bower((i + 1) + ") " + pkg.name + "#" + pkg.version, spaces + "       ");
-
-            for (var j = 0; j < pick.dependants.length; j++) {
-                var dep = pick.dependants[j].pkgMeta;
-
-                logger.bower("Depends " + dep.name + "#" + dep.version, spaces + "         ");
-            }
-        };
-    }
-
-    if (output) {
-        logger.bower(output);
+        logger.bower(output, spaces);
     }
 }
 
@@ -177,7 +152,7 @@ module.exports = {
         })
     },
 
-    // Call bower install for the specified dependency
+    // Call bower uninstall for the specified dependency
     uninstall: function (dependency, save, spaces) {
         return Q.Promise(function(resolve, reject) {
             spaces = spaces || "";
@@ -189,7 +164,7 @@ module.exports = {
                 logger.bower("Uninstall " + dependency + "...");
             }
     
-            // Call bower install command
+            // Call bower uninstall command
             var uninstall = bower.commands.uninstall(dependencies, { save: save }, { interactive: true })
                 .on('end', function (data) {
                     if (data && data.name) {
@@ -200,7 +175,7 @@ module.exports = {
                     resolve(data);
                 })
                 .on('log', function (data, callback) {
-                    logUninstall(data, spaces, callback);
+                    log(data, spaces, callback);
                 })
                 .on('error', function(data) {
                     error(data);
@@ -224,7 +199,7 @@ module.exports = {
 
             logger.debug("Calling bower link", spaces);
 
-            // Call bower install command
+            // Call bower link command
             var link = bower.commands.link(dependency, undefined, { interactive: true })
                 .on('end', function(data) {
                     if (data && data.name) {
@@ -269,7 +244,7 @@ module.exports = {
 
             logger.debug("Calling bower info", spaces);
 
-            // Call bower install command
+            // Call bower info command
             var info = bower.commands.info(dependency, undefined, { interactive: true })
                 .on('end', function(data) {
                     if (data && data.name && args.isDebug()) {
@@ -314,7 +289,7 @@ module.exports = {
 
             logger.debug("Calling bower lookup", spaces);
             
-            // Call bower install command
+            // Call bower lookup command
             var info = bower.commands.lookup(dependency, undefined, { interactive: true })
                 .on('end', function(data) {
                     if (data && data.name) {
