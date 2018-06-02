@@ -100,11 +100,11 @@ function rebundleCommand(package, spaces, callback) {
                     let quarkConf = quarkConfs[i];
 
                     if (quarkConf) {
-                        if (!bundleInfo.isAutoBundled(quarkConf.name, merged)) {
+                        if (!bundleConfig.isAutoBundled(quarkConf.name, merged)) {
                             logger.info("Bundling " + chalk.bold.green(quarkConf.name), spaces);
 
                             merged = merge(quarkConf.config.bundling, merged, true);
-                            merged = utils.markAutoBundled(quarkConf.name, merged);
+                            merged = bundleConfig.markAutoBundled(quarkConf.name, merged);
                         } else {
                             logger.info("Quark package " + chalk.bold.green(quarkConf.name) + " is already auto bundled.");
                         }

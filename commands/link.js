@@ -32,11 +32,15 @@ function linkCommand(package, spaces, callback) {
                 // Get the package config from REST service
                 rest.getPackages(mods, spaces + "  ").then(function(data) {                    
                     if (data) {
-                        for (var name in data) {
-                            logger.debug("Quark configuration found for package: " + chalk.bold.green(name));
+                        for (var i = 0; i < data.length; i++) {
+                            var name = data[i].name;
 
+                            logger.debug("Quark configuration found for package: " + chalk.bold.green(name), spaces);
+    
                             // Append the quarks config to the bower info object
-                            mods[name].quark = data[name];
+                            if (mods[name]) {
+                                mods[name].quark = data[i];
+                            }
                         }
                     }
 

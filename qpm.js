@@ -25,8 +25,10 @@ if (!command) {
 }
 
 // If command specified and -h parameter received show help
-if (command && (argv['h'] || argv['help'])) {
-    help.show(command);
+if (command && command.toLowerCase() == "help") {
+    var helpCommand = argv["_"][1];
+
+    help.show(helpCommand);
     return;
 }
 
@@ -37,6 +39,8 @@ function getPackage(required) {
         logger.error("Must specify a package name");
         throw new Error("Package name not specified");
     }
+
+    return package;
 }
 
 // Execute selected command
