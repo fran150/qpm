@@ -1,6 +1,8 @@
 var Q = require('q');
 var chalk = require('chalk');
 
+var quarkConfFileExceptions = require('../exceptions/quarkConfFile.exceptions');
+
 var logger = require('../utils/logger');
 var qpmrc = require('../utils/qpmrc');
 var utils = require('../utils/utils');
@@ -8,21 +10,25 @@ var utils = require('../utils/utils');
 var argv = require('minimist')(process.argv.slice(2));
 
 // Get's the target configuration file for install / uninstall command
-function getQuarkConfigPath(spaces) {  
+function getQuarkConfigPath(spaces, args) {  
     spaces = spaces || "";
     
     return Q.Promise(function(resolve, reject) {
         // Config file to modify
         let target = "";
 
+        if (!args || args == null) {
+            args = argv;
+        }
+
         // Check for c option
-        if (argv["c"]) {
-            target = argv["c"];
+        if (args["c"]) {
+            target = args["c"];
         }
         
         // Check for config parameter
-        if (!target && argv["config"]) {
-            target = argv["config"];
+        if (!target && args["config"]) {
+            target = args["config"];
         }
         
         // If not target specified as parameter check for config on qpmrc
@@ -40,14 +46,14 @@ function getQuarkConfigPath(spaces) {
                         if (exists) {
                             resolve(config.config);
                         } else {
-                            var msg = "Quark config file specified in .qpmrc doesn't exists";
-                            logger.error(msg);
-                            reject(msg);
+                            logger.error("Quark config file specified in .qpmrc doesn't exists");
+                            reject(new quarkConfFileExceptions.QuarkConfFileNotFoundException());
                         }
                     })
                     .catch(function(error) {
-                        logger.error("Can't read config file specified in .qpmrc");
-                        reject(error);
+                        var ex = new quarkConfFileExceptions.CantCheckQuarkConfigFileExistenceException(config.config, error);
+                        logger.error(ex.message);
+                        reject(ex);
                     });
                 } else {
                     logger.debug("Quark config location not found on .qpmrc", spaces);
@@ -68,23 +74,22 @@ function getQuarkConfigPath(spaces) {
                         }
     
                         if (target) {
-                            logger.debug("Found quark configuration file in " + chalk.bold.green(target));
-                            
+                            logger.debug("Found quark configuration file in " + chalk.bold.green(target));                            
                             resolve(target);
                         } else {
-                            var msg = "Quark's configuration file not found";
-                            logger.error(msg);
-                            reject(msg);
+                            var ex = new quarkConfFileExceptions.QuarkConfFileNotFoundException();
+                            logger.error(ex.message);
+                            reject(ex);
                         }
                     })
-                    .catch(function (error) {
-                        logger.error("Error trying to find the quark configuration file");
-                        reject(error);
+                    .catch(function(error) {
+                        var ex = new quarkConfFileExceptions.CantCheckQuarkConfigFileExistenceException("tests/app/require.config.js|src/app/require.config.js", error);
+                        logger.error(ex.message);
+                        reject(ex);
                     });                        
                 }    
             })
             .catch(function(error) {
-                logger.error("Error reading .qpmrc file");
                 reject(error);
             });
         } else {
@@ -93,16 +98,18 @@ function getQuarkConfigPath(spaces) {
             // If quark config location is specified by parameters check if file exists
             utils.fileExists(target).then(function(exists) {
                 if (!exists) {
-                    reject("Quark's configuration file not found");
+                    var ex = new quarkConfFileExceptions.QuarkConfFileNotFoundException();
+                    logger.error(ex.message);
+                    reject(ex);
                 } else {
                     logger.debug("Configuration file exists.", spaces);
-
                     resolve(target);
                 }
             })
             .catch(function(error) {
-                logger.error("Error trying to validate the specified configuration file");
-                reject(error);
+                var ex = new quarkConfFileExceptions.CantCheckQuarkConfigFileExistenceException(target, error);
+                logger.error(ex.message);
+                reject(ex);
             })
         }
     });

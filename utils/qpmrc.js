@@ -2,6 +2,8 @@ var Q = require('Q');
 var fs = require('fs');
 var merge = require('merge');
 
+var qpmRcExceptions = require('../exceptions/qpmrc.exceptions');
+
 var logger = require("./logger");
 
 function getDefaultConfig() {
@@ -37,8 +39,9 @@ function Qpmrc() {
                             savedConfig = config;                            
                             resolve(config);
                         } else {   
-                            logger.error("Error reading .qpmrc file");
-                            reject(err);
+                            var ex = new qpmRcExceptions.CantReadQpmRcFileException(err);
+                            logger.error(ex.message);
+                            reject(ex);
                         }
                     } else {
                         logger.debug(".qpmrc file found using for configuration", spaces);

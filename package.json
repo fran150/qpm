@@ -3,9 +3,11 @@
   "version": "0.5.0",
   "description": "Quark Package Manager",
   "main": "qpm.js",
-  "scripts": {},
+  "scripts": {
+    "test": "jasmine"
+  },
   "bin": {
-    "qpm": "./qpm.js"
+    "qpm": "./cli.js"
   },
   "repository": {
     "type": "git",
@@ -35,5 +37,8 @@
     "minimist": "^1.2.0",
     "q": "^1.5.1",
     "request": "^2.83.0"
+  },
+  "devDependencies": {
+    "jasmine": "^3.3.0"
   }
 }

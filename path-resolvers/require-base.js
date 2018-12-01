@@ -1,6 +1,8 @@
 var Q = require('q');
 var chalk = require('chalk');
 
+var requireBaseExceptions = require("../exceptions/requireBase.exceptions");
+
 var logger = require('../utils/logger');
 var qpmrc = require('../utils/qpmrc');
 var utils = require('../utils/utils');
@@ -8,21 +10,25 @@ var utils = require('../utils/utils');
 var argv = require('minimist')(process.argv.slice(2));
 
 // Get the base dir where the app and bower_moudules high
-function getRequireBaseDir(spaces) {
+function getRequireBaseDir(spaces, args) {
     spaces = spaces || "";
 
     return Q.Promise(function(resolve, reject) {
         // Base dir for application
         let baseDir = "";
 
+        if (!args || args == null) {
+            args = argv;
+        }
+
         // Check for b option
-        if (argv["b"]) {
-            baseDir = argv["b"];
+        if (args["b"]) {
+            baseDir = args["b"];
         }
         
         // Check for base parameter
-        if (!baseDir && argv["base"]) {
-            baseDir = argv["base"];
+        if (!baseDir && args["base"]) {
+            baseDir = args["base"];
         }
         
         // If base dir not specified as argument
@@ -53,36 +59,36 @@ function getRequireBaseDir(spaces) {
                             
                         resolve(baseDir);                
                     } else {
-                        var msg = "Can't find a base dir for the application. By default qpm uses ./src if your base dir is custom use -b or --base parameters to specify it";
-                        logger.error(msg);
-                        reject(msg);
+                        var ex = new requireBaseExceptions.BaseDirNotFoundException();                        
+                        logger.error(ex.message);
+                        reject(ex);
                     }
                 })
                 .catch(function(error) {
-                    logger.error("Error reading base dir");
-                    reject(error);
+                    var ex = new requireBaseExceptions.CantCheckBaseDirExistenceException(baseDir, error);
+                    logger.error(ex.message);
+                    reject(ex);
                 });
             })
             .catch(function(error) {
-                logger.error("Error reading .qpmrc file");
                 reject(error);
             });
         } else {
             // If base dir specified as argument check if exists
             utils.fileExists(baseDir).then(function(exists) {
                 if (exists) {
-                    logger.debug("Standard base dir specified by arguments: " + chalk.bold.green(baseDir), spaces);
-                        
+                    logger.debug("Standard base dir specified by arguments: " + chalk.bold.green(baseDir), spaces);                        
                     resolve(baseDir);
                 } else {
-                    var msg = "Can't find the specified base dir.";
-                    logger.error(msg);
-                    reject(new Error(msg));
+                    var ex = new requireBaseExceptions.BaseDirNotFoundException();                        
+                    logger.error(ex.message);
+                    reject(ex);
                 }
             })
             .catch(function(error) {
-                logger.error("An error ocurred reading the specified base dir");
-                reject(error);
+                var ex = new requireBaseExceptions.CantCheckBaseDirExistenceException(baseDir, error);
+                logger.error(ex.message);
+                reject(ex);
             });
         }
     });

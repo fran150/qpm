@@ -1,25 +1,30 @@
 var Q = require('q');
 var chalk = require('chalk');
 
+var gulpFileExceptions = require('../exceptions/gulpFile.exceptions');
+
 var logger = require('../utils/logger');
-var qpmrc = require('../utils/qpmrc');
 var utils = require('../utils/utils');
 
 var argv = require('minimist')(process.argv.slice(2));
 
 // Gets the gulp config file
-function getGulpConfPath(spaces) {
+function getGulpConfPath(spaces, args) {
     return Q.Promise(function(resolve, reject) {
         let gulpJsonFile;
 
+        if (!args || args == null) {
+            args = argv;
+        }
+
         // Check for gulp file parameter
-        if (argv["g"]) {
-            gulpJsonFile = argv["g"];
+        if (args["g"]) {
+            gulpJsonFile = args["g"];
         }
 
         // Check for bundles parameters
-        if (!gulpJsonFile && argv["gulpfile"]) {
-            gulpJsonFile = argv["gulpfile"];
+        if (!gulpJsonFile && args["gulpfile"]) {
+            gulpJsonFile = args["gulpfile"];
         }
 
         // If no bundling json specified set the default location
@@ -36,18 +41,18 @@ function getGulpConfPath(spaces) {
         // If base dir specified as argument check if exists
         utils.fileExists(gulpJsonFile).then(function(exists) {
             if (exists) {
-                logger.debug("Gulp conf file found!", spaces);
-                        
+                logger.debug("Gulp conf file found!", spaces);                        
                 resolve(gulpJsonFile);
             } else {
-                var msg = "Gulp config file not found. If not using standard location use -g argument to specify the path";
-                logger.error(msg);
-                reject(msg);
+                var ex = new gulpFileExceptions.GulpFileNotFoundException();
+                logger.error(ex.message);
+                reject(ex);
             }
         })
         .catch(function(error) {
-            logger.error("Error trying to found if gulp config file exists");
-            reject(error);
+            var ex = new gulpFileExceptions.CantCheckGulpFileExistenceException(gulpJsonFile, error);
+            logger.error(ex.message);
+            reject(ex);
         })
     })
 }

@@ -3,8 +3,29 @@ var merge = require('merge');
 var request = require('request');
 var chalk = require('chalk');
 
+var restExceptions = require('../exceptions/restService.exceptions');
+
 var qpmrc = require('./qpmrc');
 var logger = require('./logger');
+
+function processResponse(error, response, body, resolve, reject) {
+    if (!error && response.statusCode >= 200 && response.statusCode < 300) {
+        resolve(body);
+    } else {
+        var ex;
+
+        if (error) {
+            ex = new restExceptions.ErrorCallingServerException(error);
+        } else if (response.statusCode == 401 || response.statusCode == 403) {
+            ex = new restExceptions.UnauthorizedException(response, body);
+        } else {
+            ex = new restExceptions.ServerRespondedWithErrorException(response, body);            
+        }
+        
+        logger.error(ex.message);
+        reject(ex);
+    }
+}
 
 module.exports = {
     // Get the specified package config from service
@@ -24,18 +45,10 @@ module.exports = {
                 logger.debug("Searching quark config for package " + chalk.bold.green(name + "#" + version), spaces);
                         
                 request.get(reqConfig, function(error, response, body) {
-                    if (!error) {
-                        resolve(body);
-                    } else {
-                        logger.error(error);
-                        reject(new Error(error));
-                    }                
+                    processResponse(error, response, body, resolve, reject);
                 });    
             })
-            .catch(function (error) {
-                logger.error("Error reading .qpmrc file");
-                reject(error)
-            });
+            .catch(reject);
         });
     },
 
@@ -55,18 +68,10 @@ module.exports = {
                 reqConfig = merge.recursive(reqConfig, config.http);
             
                 request.post(reqConfig, function(error, response, body) {
-                    if (!error) {
-                        resolve(body);
-                    } else {
-                        logger.error(error);
-                        reject(new Error(error));
-                    }                
+                    processResponse(error, response, body, resolve, reject);                    
                 });    
             })
-            .catch(function (error) {
-                logger.error("Error reading .qpmrc file");
-                reject(error);
-            });
+            .catch(reject);
         });
     },
 
@@ -89,21 +94,10 @@ module.exports = {
                 reqConfig = merge.recursive(reqConfig, config.http);
             
                 request.post(reqConfig, function(error, response, body) {
-                    if (!error && response.statusCode >= 200 && response.statusCode < 300) {
-                        resolve(body);
-                    } else if (response.statusCode >= 400 && response.statusCode < 500) {
-                        var msg = "User unauthorized to register a package. If the package exists the only users authorized to edit it are the original user that register the package first or a repo collaborator";
-                        logger.error(msg);
-                        reject(msg);
-                    } else {
-                        reject(error);
-                    }
+                    processResponse(error, response, body, resolve, reject);
                 });    
             })
-            .catch(function (error) {
-                logger.error("Error reading .qpmrc file");
-                reject(error);
-            });
+            .catch(reject);
         });
     }
     

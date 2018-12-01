@@ -9,16 +9,17 @@ var quarkConfigReader = require('../quark-config/reader');
 var quarkConfigurator = require('../quark-config/configurator');
 var rest = require('../utils/rest');
 var bower = require('../utils/bower-node');
+var utils = require('../utils/utils');
 
 // Install command
-function installCommand(package, spaces, callback) {
+function installCommand(package, spaces, args, callback) {
     spaces = spaces || "";
 
     // Gets the target config file from arguments, qpmrc or common location
-    var configPathPromise = getQuarkConfigPath(spaces + "  ");
+    var configPathPromise = getQuarkConfigPath(spaces + "  ", args);
 
     // Gets the base dir
-    var baseDirPromise = getRequireBaseDir(spaces + "  ");
+    var baseDirPromise = getRequireBaseDir(spaces + "  ", args);
 
     // Reads the quark config file
     var readQuarkConfigPromise = quarkConfigReader.read(configPathPromise, spaces + "  ");
@@ -27,10 +28,12 @@ function installCommand(package, spaces, callback) {
     var packageConfigPromise = Q.Promise(function(resolve, reject) {
         bower.install(package, true, spaces + "  ").then(function() {
             bower.list(spaces + "  ").then(function(mods) {
-                logger.verbose(JSON.stringify(mods, null, 4));
+                logger.verbose(JSON.stringify(mods, null, 4));                
                 
+                var modArray = utils.modsToArray(mods);
+
                 // Get the package config from REST service
-                rest.getPackages(mods, spaces + "  ").then(function(data) {
+                rest.getPackages(modArray, spaces + "  ").then(function(data) {
                     if (data) {
                         for (var i = 0; i < data.length; i++) {
                             var name = data[i].name;
@@ -94,16 +97,22 @@ function installCommand(package, spaces, callback) {
         fs.writeFile(configPath, quarkConfigContent, 'utf8', function (err) {
             if (err) {
                 logger.error("Error Writing File");
-                throw new Error(err);
+                if (callback) {
+                    callback(new Error(err));
+                }
             } else {
+                if (callback) {
+                    callback();
+                }                
                 logger.info("Package installed!");
             }
         });
     })
     .catch(function(error) {
-        throw new Error(error);
+        if (callback) {
+            callback(new Error(error));
+        }
     })
-    .done();        
 }
 
 module.exports = installCommand;

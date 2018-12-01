@@ -3,6 +3,8 @@ var chalk = require('chalk');
 var inquirer = require('inquirer');
 var Q = require('Q');
 
+var bowerNodeExceptions = require("../exceptions/bowerNode.exceptions");
+
 var logger = require("./logger");
 
 function log(data, spaces, callback) {
@@ -117,7 +119,7 @@ module.exports = {
                 })
                 .on('error', function(data) {
                     error(data);
-                    reject(new Error(data));
+                    reject(new bowerNodeExceptions.BowerNodeCommandException(data, "install"));
                 })
                 .on('prompt', prompt);    
         })
@@ -146,7 +148,7 @@ module.exports = {
                 })
                 .on('error', function(data) { 
                     error(data);
-                    reject(new Error(data));
+                    reject(new bowerNodeExceptions.BowerNodeCommandException(data, "list"));
                 })
                 .on('prompt', prompt);    
         })
@@ -179,7 +181,7 @@ module.exports = {
                 })
                 .on('error', function(data) {
                     error(data);
-                    reject(new Error(data));
+                    reject(new bowerNodeExceptions.BowerNodeCommandException(data, "uninstall"));
                 })
                 .on('prompt', prompt);    
         });
@@ -224,7 +226,7 @@ module.exports = {
                 })
                 .on('error', function(data) {
                     error(data);
-                    reject(new Error(data));
+                    reject(new bowerNodeExceptions.BowerNodeCommandException(data, "link"));
                 })
                 .on('prompt', prompt);    
         })
@@ -269,7 +271,7 @@ module.exports = {
                 })
                 .on('error', function(data) {
                     error(data);
-                    reject(new Error(data));
+                    reject(new bowerNodeExceptions.BowerNodeCommandException(data, "info"));
                 })
                 .on('prompt', prompt);    
         })
@@ -304,7 +306,7 @@ module.exports = {
                 })
                 .on('error', function(data) {
                     error(data);
-                    reject(new Error(data));
+                    reject(new bowerNodeExceptions.BowerNodeCommandException(data, "lookup"));
                 })
                 .on('prompt', prompt);    
         })

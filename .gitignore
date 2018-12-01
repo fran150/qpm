@@ -4,3 +4,4 @@
 /bower_components/
 /node_modules/
 /api/
+/spec/mocks/bower_modules

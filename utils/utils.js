@@ -5,12 +5,14 @@ function Utils() {
     var self = this;
 
     this.fileExists = function(fileName) {
-        return Q.Promise(function(resolve) {
-            fs.stat(fileName, function(err, stats) {                
-                if (err) {
+        return Q.Promise(function(resolve, reject) {
+            fs.stat(fileName, function(err) {                
+                if(err == null) {
+                    resolve(true);
+                } else if(err.code === 'ENOENT') {
                     resolve(false);
                 } else {
-                    resolve(true);
+                    reject(err);
                 }                
             })
         });
@@ -29,6 +31,16 @@ function Utils() {
 
         return false;
     };
+
+    this.modsToArray = function(mods) {
+        var result = {};
+
+        for (var name in mods) {
+            result[name] = mods[name].version;
+        }
+
+        return result;
+    }
 }
 
 module.exports = new Utils();

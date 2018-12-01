@@ -1,7 +1,3 @@
-#!/usr/bin/env node
-var chalk = require('chalk');
-var help = require('./help');
-
 var logger = require('./utils/logger');
 
 // Get required libs
@@ -13,109 +9,50 @@ var commandRebundle = require('./commands/rebundle');
 var commandUnbundle = require('./commands/unbundle');
 var commandRegister = require('./commands/register');
 
-var argv = require('minimist')(process.argv.slice(2));
-
-// Get command "qpm [command]"
-var command = argv["_"][0];
-
-// If no command specified show help
-if (!command) {
-    help.show();
-    return;
-}
-
-// If command specified and -h parameter received show help
-if (command && command.toLowerCase() == "help") {
-    var helpCommand = argv["_"][1];
-
-    help.show(helpCommand);
-    return;
-}
-
-function getPackage(required) {
-    var package = argv["_"][1];
-
-    if (required && !package) {
+function validatePackage(package) {
+    if (!package) {
         logger.error("Must specify a package name");
         throw new Error("Package name not specified");
     }
-
-    return package;
 }
 
-// Execute selected command
-switch (command) {
-    case "install":
-        // Get package name
-        var package = getPackage(false);
-
+module.exports = {
+    install: function(package, args, callback) {
         logger.debug("Starting command install");
+        commandInstall(package, "", args, callback);
+    },
 
-        // Call install
-        commandInstall(package, "", end);
-        break;
-
-    case "uninstall":
-        // Get package name
-        var package = getPackage(true);
-
+    uninstall: function(package, callback) {
+        validatePackage(package);
         logger.debug("Starting command uninstall");
+        commandUninstall(package, "", callback);
+    },
 
-        // Call install
-        commandUninstall(package, "", end);
-        break;
-
-    case "link":
-        // Get package name
-        var package = getPackage(true);
-
+    link: function(package, callback) {
+        validatePackage(package);
         logger.debug("Starting command link");
-                
-        // Call install
-        commandLink(package, "", end);
-        break;
+        commandLink(package, "", callback);
+    },
 
-    case "bundle":
-        // Get package name
-        var package = getPackage(true);
-
+    bundle: function(package, callback) {
+        validatePackage(package);
         logger.debug("Starting command bundle");
-        
-        // Call install
-        commandBundle(package, "", end);
-        break;        
+        commandBundle(package, "", callback);
+    },
 
-    case "rebundle":
+    rebundle: function(callback) {
         logger.debug("Starting command rebundle");
+        commandRebundle(package, "", callback);
+    },
         
-        // Call install
-        commandRebundle(package, "", end);
-        break;    
-        
-    case "unbundle":
-        // Get package name
-        var package = getPackage(true);
-
+    unbundle: function(package, callback) {
+        validatePackage(package);
         logger.debug("Starting command unbundle");
-        
-        // Call install
-        commandUnbundle(package, "", end);
-        break;      
-        
-    case "register":
+        commandUnbundle(package, "", callback);
+    },
+
+    register: function(callback) {
         logger.debug("Starting command register");
-
-        // Call install
-        commandRegister("", end);
-        break;          
-        
-    default:
-        help.show(command);
-        break;
-}
-
-// Install command
-
-function end() {
-    console.log(chalk.green("Finished!"));
+        commandRegister("", callback);
+    }
 }
