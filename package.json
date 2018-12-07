@@ -39,6 +39,7 @@
     "request": "^2.83.0"
   },
   "devDependencies": {
+    "fs-extra": "^7.0.1",
     "jasmine": "^3.3.0"
   }
 }
